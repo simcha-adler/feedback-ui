@@ -1,0 +1,54 @@
+{
+    "name": "feedback-ui",
+    "version": "1.0.0",
+    "description": "דיאלוגים וטוסטים לדפדפן. אפס תלויות runtime, RTL/LTR, ESM + IIFE.",
+    "type": "module",
+    "main": "./dist/feedback.js",
+    "module": "./dist/feedback.js",
+    "types": "./dist/feedback.d.ts",
+    "style": "./dist/feedback.css",
+    "unpkg": "./dist/feedback.min.js",
+    "jsdelivr": "./dist/feedback.min.js",
+    "exports": {
+        ".": {
+            "types": "./dist/feedback.d.ts",
+            "import": "./dist/feedback.js",
+            "default": "./dist/feedback.js"
+        },
+        "./style.css": "./dist/feedback.css",
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist",
+        "LICENSE",
+        "CHANGELOG.md"
+    ],
+    "sideEffects": [
+        "*.css"
+    ],
+    "scripts": {
+        "build": "node scripts/build.js",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "dialog",
+        "toast",
+        "modal",
+        "rtl",
+        "ltr",
+        "hebrew",
+        "feedback",
+        "vanilla",
+        "zero-dependency"
+    ],
+    "author": {
+        "name": "שמחה אדלר"
+    },
+    "license": "MIT",
+    "devDependencies": {
+        "esbuild": "^0.25.0"
+    },
+    "allowScripts": {
+        "esbuild@0.25.12": true
+    }
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback</title>
+    <link rel="stylesheet" href="../src/feedback.css">
+    <style>
+        :root {
+            --demo-bg: #f8fafc;
+            --demo-surface: #ffffff;
+            --demo-text: #1e293b;
+            --demo-muted: #64748b;
+            --demo-border: #cbd5e1;
+            --demo-primary: #2563eb;
+            --demo-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0 auto;
+            padding: 2rem 1.25rem 4rem;
+            max-width: 960px;
+            font-family: system-ui, sans-serif;
+            color: var(--demo-text);
+            background: var(--demo-bg);
+        }
+
+        .demo-dir-toggle {
+            position: fixed;
+            inset-block-start: 0.75rem;
+            inset-inline-start: 0.75rem;
+            z-index: 2;
+            padding: 0.4rem 0.75rem;
+            font: inherit;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--demo-text);
+            background: var(--demo-surface);
+            border: 1px solid var(--demo-border);
+            border-radius: var(--demo-radius);
+            cursor: pointer;
+        }
+
+        .demo-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            padding: 1.25rem;
+            margin-block-end: 1rem;
+            background: var(--demo-bg);
+        }
+
+        .demo-card > button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.25rem;
+            font: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #fff;
+            background: var(--demo-primary);
+            border: 1px solid transparent;
+            border-radius: var(--demo-radius);
+            cursor: pointer;
+            transition: filter 0.2s ease, transform 0.1s ease;
+        }
+
+        .demo-card > button:hover {
+            filter: brightness(0.9);
+            transform: scale(1.02);
+        }
+
+        .demo-card > button:active {
+            transform: scale(0.98);
+        }
+
+        .demo-card > button:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--demo-primary) 35%, transparent);
+        }
+
+        .demo-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1.5rem 0;
+            font-size: 0.875rem;
+            color: var(--demo-muted);
+        }
+
+        .demo-divider::before,
+        .demo-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--demo-border);
+        }
+
+        .demo-divider:not(:empty)::before {
+            margin-inline-end: 1rem;
+        }
+
+        .demo-divider:not(:empty)::after {
+            margin-inline-start: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <button type="button" id="demo-dir-toggle" class="demo-dir-toggle">LTR</button>
+    <div class="demo-card">
+        <button type="button" id="alert1">דיאלוג אלרט</button>
+        <button type="button" id="simpalert1">דיאלוג אלרט פשוט</button>
+        <button type="button" id="confirm1">דיאלוג קונפירם</button>
+        <button type="button" id="simpconfirm1">דיאלוג קונפירם פשוט</button>
+        <button type="button" id="prompt1">דיאלוג פרומפט</button>
+        <button type="button" id="simpprompt1">דיאלוג פרומפט פשוט</button>
+        <button type="button" id="menu1">דיאלוג מניו</button>
+        <button type="button" id="form1">דיאלוג פורם</button>
+        <button type="button" id="selector1">דיאלוג סלקטור</button>
+    </div>
+    <div class="demo-divider">סוג נוסף</div>
+    <div class="demo-card">
+        <button type="button" id="alert2">דיאלוג אלרט</button>
+        <button type="button" id="simpalert2">דיאלוג אלרט פשוט</button>
+        <button type="button" id="confirm2">דיאלוג קונפירם</button>
+        <button type="button" id="simpconfirm2">דיאלוג קונפירם פשוט</button>
+        <button type="button" id="prompt2">דיאלוג פרומפט</button>
+        <button type="button" id="simpprompt2">דיאלוג פרומפט פשוט</button>
+        <button type="button" id="menu2">דיאלוג מניו</button>
+        <button type="button" id="form2">דיאלוג פורם</button>
+        <button type="button" id="selector2">דיאלוג סלקטור</button>
+    </div>
+    <div class="demo-divider">טוסטים</div>
+    <div class="demo-card">
+        <button type="button" id="success">הצלחה</button>
+        <button type="button" id="error">שגיאה</button>
+        <button type="button" id="warning">אזהרה</button>
+        <button type="button" id="info">מידע</button>
+    </div>
+    <div class="demo-divider">ערמות וכפילויות</div>
+    <div class="demo-card">
+        <button type="button" id="toasts">6 טוסטים ביחד</button>
+        <button type="button" id="dialogs">4 דיאלוגים ביחד</button>
+        <button type="button" id="toastsAndDialogs">טוסטים ודיאלוגים יחד</button>
+        <button type="button" id="toastsWait">4 טוסטים עם המתנה</button>
+        <button type="button" id="dialogsWait">4 דיאלוגים עם המתנה</button>
+        <button type="button" id="toastsAndDialogsWait">טוסטים ודיאלוגים עם המתנה</button>
+    </div>
+    <div class="demo-divider">בדיקות חוזה</div>
+    <div class="demo-card">
+        <button type="button" id="test-queue">תור + Enter</button>
+        <button type="button" id="test-confirm-contract">confirm חוזה</button>
+        <button type="button" id="test-menu-falsy">menu falsy</button>
+        <button type="button" id="test-selector-filter">selector סינון</button>
+        <button type="button" id="test-escaping">טקסט מסוכן</button>
+        <button type="button" id="test-prompt-cancel">prompt ביטול</button>
+        <button type="button" id="test-size">size sm / lg</button>
+        <button type="button" id="test-close-all">closeAll</button>
+    </div>
+    <script src="../dist/feedback.min.js"></script>
+    <script src="./demo.js"></script>
+</body>
+
+</html>

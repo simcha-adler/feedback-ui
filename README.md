@@ -1,0 +1,165 @@
+# Feedback
+
+ספריית דיאלוגים וטוסטים לדפדפן. בלי תלויות, עם RTL מובנה, ו־API שמחכה ל־`await` כמו `alert` / `confirm` / `prompt` — בלי לתקוע את הדף.
+
+MIT · ESM + IIFE · CSS עצמאי · `prefers-color-scheme`
+
+---
+
+## התקנה
+
+```bash
+npm install feedback-ui
+```
+
+```js
+import { Feedback } from 'feedback-ui';
+import 'feedback-ui/style.css';
+
+await Feedback.alert('הפעולה הושלמה');
+```
+
+בלי bundler — שני קבצים מ־`dist/`:
+
+```html
+<link rel="stylesheet" href="./dist/feedback.css" />
+<script src="./dist/feedback.min.js"></script>
+<script>
+  Feedback.alert('שלום');
+</script>
+```
+
+הדמו המקומי טוען ישירות מ־`src/`. מ־`file://` מודולי ES לא ייטענו — צריך שרת סטטי, למשל:
+
+```bash
+python -m http.server 5502
+```
+
+ואז [http://127.0.0.1:5502/demo/](http://127.0.0.1:5502/demo/).
+
+---
+
+## מה הספרייה עושה
+
+| מתודה | מתי | מה חוזר |
+|---|---|---|
+| `alert(message \| {…})` | הודעה עם כפתור אחד | `Promise<void>` |
+| `confirm(message \| {…})` | כן / לא | `Promise<boolean>` — תמיד `true` או `false` |
+| `prompt(message \| {…})` | שדה קלט אחד | ערך באישור, `null` בביטול |
+| `menu({ buttons })` | כמה פעולות | `value` של הכפתור, `null` בביטול |
+| `selector({ items })` | רשימה (אופציונלי חיפוש) | `value` של הפריט, `null` בביטול |
+| `form({ fields })` | כמה שדות | אובייקט לפי `name`, `null` בביטול |
+| `toast.success` / `info` / `warning` / `error` | הודעה קצרה בלי לחסום | `{ close() }` — לא Promise |
+| `closeAll()` | סגירת דיאלוג פתוח + ריקון התור | `void` — כל Promise נפתר כמו ביטול |
+
+דיאלוג אחד בלבד על המסך. קריאות נוספות נכנסות לתור ומופיעות אחרי שהקודם נסגר.
+
+`size: 'sm' | 'md' | 'lg'` על כל דיאלוג. בלי `size` = `md` (400px). `lg` לטופס רחב.
+
+טוסטים לא נחסמים: עד 5 גלויים, מעבר עכבר או פוקוס עוצר את הטיימר, והם נשארים מעל דיאלוג פתוח.
+
+---
+
+## שימוש
+
+```js
+await Feedback.alert('נשמר.');
+
+const ok = await Feedback.confirm({
+  title: 'מחיקה',
+  message: 'למחוק את הרשומה? לא ניתן לשחזר.',
+  confirmBtn: { text: 'מחק', theme: 'danger' },
+  cancelBtn: 'ביטול',
+});
+if (!ok) return;
+
+const name = await Feedback.prompt({
+  title: 'שם פרויקט',
+  defaultText: 'בלי שם',
+  required: true,
+});
+if (name == null) return;
+
+const action = await Feedback.menu({
+  title: 'הקובץ',
+  buttons: [
+    { text: 'עריכה', value: 'edit' },
+    { text: 'שכפול', value: 'duplicate', theme: 'secondary' },
+    { text: 'מחיקה', value: 'delete', theme: 'danger' },
+  ],
+});
+
+const lang = await Feedback.selector({
+  title: 'שפה',
+  searchable: true,
+  items: [
+    { text: 'עברית', value: 'he' },
+    { text: 'English', value: 'en' },
+  ],
+});
+
+const profile = await Feedback.form({
+  title: 'פרופיל',
+  size: 'lg',
+  fields: [
+    { name: 'fullName', label: 'שם', required: true },
+    { name: 'age', label: 'גיל', type: 'number', min: 0 },
+    { name: 'dept', label: 'מחלקה', type: 'select', options: ['פיתוח', { value: 'hr', text: 'משאבי אנוש' }] },
+    { name: 'notes', label: 'הערות', type: 'textarea' },
+    { name: 'newsletter', label: 'עדכונים', type: 'checkbox', default: true },
+  ],
+});
+
+Feedback.toast.success('נשמר');
+Feedback.toast.error('נכשל', 4000);
+const t = Feedback.toast.info('טוען…');
+t.close();
+
+Feedback.closeAll();
+```
+
+כפתור יכול להיות מחרוזת (`'אישור'`) או `{ text, theme }`.  
+`theme`: `primary` · `secondary` · `danger` · `warning` · `success` · `error` · `info` · `outline`.
+
+טקסט צרכן (כותרת, הודעה, תוויות, טוסט) מוצג כטקסט — לא כ־HTML. `\n` בהודעת דיאלוג נשבר לשורה חדשה.
+
+---
+
+## ערכים שחוזרים
+
+חשוב לבדוק לפי הטיפוס, לא לפי truthiness.
+
+- **confirm** — אישור → `true`. ביטול, X ו־Esc → `false`. אף פעם לא `null`.
+- **alert** — תמיד `undefined` (גם ב־X / Esc).
+- **prompt / menu / selector / form** — ביטול, X ו־Esc → `null`.
+- **menu** — מחזיר גם `0`, `''`, `false` אם זה ה־`value`. בלי `value` על הכפתור → `undefined`.
+- **prompt / שדה `number`** — ריק באישור → `undefined`; מספר תקין → `number`.
+- **checkbox בטופס** — תמיד `true` / `false`.
+
+---
+
+## עיצוב וכיוון
+
+הספרייה לא כופה `dir`. היא משתמשת ב־logical properties, ולכן נראית נכון ב־RTL וב־LTR לפי `dir` של המסמך.
+
+צבעים ואנימציה הם משתנים על `.fb-container`:
+
+```css
+.fb-container {
+  --fb-primary: #2563eb;
+  --fb-radius: 8px;
+  --fb-duration: 0.2s;
+  --fb-dialog-max: 400px;
+}
+```
+
+ערכת נושא:
+
+- ברירת מחדל: `prefers-color-scheme`
+- כפייה: `data-fb-theme="dark"` או `"light"` על האלמנט עצמו או על אב
+
+---
+
+## רישיון
+
+MIT — שמחה אדלר, 2026.
