@@ -17,9 +17,9 @@
 | `src/feedback.internal.d.ts` | טיפוסי פנים ל־JSDoc בלבד. לא מפורסם |
 | `src/feedback.iife.js` | `globalThis.Feedback = Feedback` ל־IIFE |
 | `scripts/build.js` | ESM + IIFE ממוזער + CSS ממוזער + העתקת d.ts |
-| `demo/` | דמו ידני. טוען **src** לא dist |
+| `demo/` | דמו ללקוח. טוען **dist** (CSS + IIFE), לא src |
 | `docs/בדיקות.md` | תרחישי חוזה ידניים מול הדמו |
-| `dist/` | פלט בילד. ב־`.gitignore`. `package.json` מפרסם רק אותו |
+| `dist/` | פלט בילד, בגיט. `package.json` מפרסם רק אותו |
 
 `jsconfig.json`: `checkJs` על `src/`, `strictNullChecks: false`, `noImplicitAny: true`.
 
@@ -107,9 +107,9 @@ npm run build
 
 esbuild: `src/feedback.js` → `dist/feedback.js` (esm minify + sourcemap), `src/feedback.iife.js` → `dist/feedback.min.js` (iife minify + sourcemap), `src/feedback.css` → `dist/feedback.css` (minify), העתקת d.ts.
 
-אין Vitest/Playwright. אימות: שרת סטטי משורש הריפו + דפדפן על `/demo/`. רשימת תרחישי חוזה: `docs/בדיקות.md`. אחרי שינוי בחוזה/תור/טוסט/escaping — לעבור על הרשימה, כולל כפתור LTR בדמו.
+אין Vitest/Playwright. אימות: `npm run build`, שרת סטטי משורש הריפו, דפדפן על `/demo/`. רשימת תרחישי חוזה: `docs/בדיקות.md`. אחרי שינוי בחוזה/תור/טוסט/escaping — לעבור על הרשימה, כולל LTR וערכת נושא בדמו.
 
-הדמו מייבא מ־`../src/feedback.js` ו־`../src/feedback.css`. שינוי ב־src נראה בדמו בלי בילד. שינוי ב־exports/package דורש בילד.
+הדמו טוען `../dist/feedback.css` ו־`../dist/feedback.min.js`. שינוי ב־src **לא** נראה בדמו עד בילד.
 
 ---
 

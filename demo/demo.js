@@ -11,6 +11,20 @@ document.getElementById('demo-dir-toggle').addEventListener('click', () => {
     document.getElementById('demo-dir-toggle').textContent = next === 'rtl' ? 'LTR' : 'RTL';
 });
 
+document.getElementById('demo-theme-toggle').addEventListener('click', () => {
+    const html = document.documentElement;
+    const cur = html.getAttribute('data-fb-theme');
+    const next = cur === 'light' ? 'dark' : cur === 'dark' ? '' : 'light';
+    const btn = document.getElementById('demo-theme-toggle');
+    if (next) {
+        html.setAttribute('data-fb-theme', next);
+        btn.textContent = next === 'light' ? 'בהיר' : 'כהה';
+    } else {
+        html.removeAttribute('data-fb-theme');
+        btn.textContent = 'מערכת';
+    }
+});
+
 // --- דיאלוגים: קבוצה 1 (שימושים בסיסיים והתאמות אישיות) ---
 
 document.getElementById('simpalert1').addEventListener('click', async () => {

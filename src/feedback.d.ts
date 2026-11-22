@@ -10,6 +10,9 @@
  * ב־npm: `node_modules/feedback-ui/dist/feedback.min.js` + `feedback.css`.
  * אין export בשם `feedback-ui/min`. אחרי `import` מ־ESM — אין גלובל ב־runtime
  * (גם אם `Window.Feedback` מופיע בטיפוסים בגלל IIFE).
+ * חבילה: https://www.npmjs.com/package/feedback-ui
+ * ריפו: https://github.com/simcha-adler/feedback-ui
+ * דמו (IIFE מ־dist): https://simcha-adler.github.io/feedback-ui/demo/
  *
  * כלים:
  * - `alert` — הודעה, כפתור אחד. TS: `Promise<void>` (לא לקרוא את הערך). JS: תמיד `undefined`.

@@ -2,6 +2,8 @@
 
 ספריית דיאלוגים וטוסטים לדפדפן. בלי תלויות, עם RTL מובנה, ו־API שמחכה ל־`await` כמו `alert` / `confirm` / `prompt` — בלי לתקוע את הדף.
 
+[npm](https://www.npmjs.com/package/feedback-ui) · [GitHub](https://github.com/simcha-adler/feedback-ui) · [דמו](https://simcha-adler.github.io/feedback-ui/demo/)
+
 MIT · ESM + IIFE · CSS עצמאי · `prefers-color-scheme`
 
 ---
@@ -29,13 +31,15 @@ await Feedback.alert('הפעולה הושלמה');
 </script>
 ```
 
-הדמו המקומי טוען ישירות מ־`src/`. מ־`file://` מודולי ES לא ייטענו — צריך שרת סטטי, למשל:
+דמו חי (אותם קבצי `dist` שבחבילה): [simcha-adler.github.io/feedback-ui/demo](https://simcha-adler.github.io/feedback-ui/demo/).
+
+מקומית, אחרי `npm run build`, משרת בשורש הריפו:
 
 ```bash
 python -m http.server 5502
 ```
 
-ואז [http://127.0.0.1:5502/demo/](http://127.0.0.1:5502/demo/).
+ואז [http://127.0.0.1:5502/demo/](http://127.0.0.1:5502/demo/). הדמו טוען `dist/feedback.css` + `dist/feedback.min.js` (IIFE), לא את `src/`.
 
 ---
 

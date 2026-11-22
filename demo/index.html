@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>feedback-ui — דמו</title>
+    <link rel="stylesheet" href="../dist/feedback.css">
+    <style>
+        :root {
+            --demo-bg: #f4f6fb;
+            --demo-bg-accent: #e8eefc;
+            --demo-surface: #ffffff;
+            --demo-text: #0f172a;
+            --demo-muted: #64748b;
+            --demo-border: #e2e8f0;
+            --demo-primary: #2563eb;
+            --demo-primary-soft: #dbeafe;
+            --demo-radius: 16px;
+            --demo-shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 12px 32px rgb(15 23 42 / 6%);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --demo-bg: #0b1220;
+                --demo-bg-accent: #132037;
+                --demo-surface: #121a2b;
+                --demo-text: #e8eefc;
+                --demo-muted: #94a3b8;
+                --demo-border: #243044;
+                --demo-primary: #60a5fa;
+                --demo-primary-soft: #1e3a5f;
+                --demo-shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 16px 40px rgb(0 0 0 / 25%);
+            }
+        }
+
+        html[data-fb-theme="light"] {
+            --demo-bg: #f4f6fb;
+            --demo-bg-accent: #e8eefc;
+            --demo-surface: #ffffff;
+            --demo-text: #0f172a;
+            --demo-muted: #64748b;
+            --demo-border: #e2e8f0;
+            --demo-primary: #2563eb;
+            --demo-primary-soft: #dbeafe;
+            --demo-shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 12px 32px rgb(15 23 42 / 6%);
+        }
+
+        html[data-fb-theme="dark"] {
+            --demo-bg: #0b1220;
+            --demo-bg-accent: #132037;
+            --demo-surface: #121a2b;
+            --demo-text: #e8eefc;
+            --demo-muted: #94a3b8;
+            --demo-border: #243044;
+            --demo-primary: #60a5fa;
+            --demo-primary-soft: #1e3a5f;
+            --demo-shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 16px 40px rgb(0 0 0 / 25%);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            color: var(--demo-text);
+            background:
+                radial-gradient(1200px 480px at 80% -10%, var(--demo-bg-accent), transparent 60%),
+                radial-gradient(900px 400px at -10% 110%, var(--demo-bg-accent), transparent 55%),
+                var(--demo-bg);
+        }
+
+        .demo-wrap {
+            width: min(1080px, calc(100% - 2rem));
+            margin-inline: auto;
+            padding-block: 2.5rem 4.5rem;
+        }
+
+        .demo-top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-block-end: 2rem;
+        }
+
+        .demo-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            max-width: 42rem;
+        }
+
+        .demo-kicker {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--demo-primary);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.75rem, 3vw, 2.35rem);
+            letter-spacing: -0.03em;
+        }
+
+        .demo-lead {
+            margin: 0;
+            color: var(--demo-muted);
+            line-height: 1.6;
+            font-size: 1.02rem;
+        }
+
+        .demo-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-block-start: 0.85rem;
+        }
+
+        .demo-links a,
+        .demo-tool {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid var(--demo-border);
+            background: var(--demo-surface);
+            color: var(--demo-text);
+            text-decoration: none;
+            font: inherit;
+            font-size: 0.8rem;
+            font-weight: 650;
+            cursor: pointer;
+        }
+
+        .demo-links a:hover,
+        .demo-tool:hover {
+            border-color: var(--demo-primary);
+            color: var(--demo-primary);
+        }
+
+        .demo-tools {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .demo-note {
+            margin: 0 0 1.75rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--demo-border);
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--demo-primary-soft) 55%, var(--demo-surface));
+            color: var(--demo-muted);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .demo-note strong { color: var(--demo-text); }
+
+        .demo-section {
+            background: var(--demo-surface);
+            border: 1px solid var(--demo-border);
+            border-radius: var(--demo-radius);
+            box-shadow: var(--demo-shadow);
+            padding: 1.25rem 1.25rem 1.35rem;
+            margin-block-end: 1rem;
+        }
+
+        .demo-section h2 {
+            margin: 0 0 0.25rem;
+            font-size: 1.05rem;
+        }
+
+        .demo-section p {
+            margin: 0 0 1rem;
+            color: var(--demo-muted);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+            gap: 0.65rem;
+        }
+
+        .demo-grid > button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.7rem;
+            padding: 0.55rem 0.85rem;
+            font: inherit;
+            font-size: 0.875rem;
+            font-weight: 650;
+            color: var(--demo-text);
+            background: transparent;
+            border: 1px solid var(--demo-border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .demo-grid > button:hover {
+            background: var(--demo-primary-soft);
+            border-color: color-mix(in srgb, var(--demo-primary) 45%, var(--demo-border));
+        }
+
+        .demo-grid > button:active { transform: scale(0.98); }
+
+        .demo-grid > button:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--demo-primary) 35%, transparent);
+        }
+
+        .demo-lead,
+        .demo-note,
+        .demo-section p {
+            unicode-bidi: plaintext;
+        }
+
+        code {
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 0.86em;
+            unicode-bidi: isolate;
+            direction: ltr;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="demo-wrap">
+        <header class="demo-top">
+            <div class="demo-brand">
+                <div class="demo-kicker">npm · feedback-ui</div>
+                <h1>דיאלוגים וטוסטים לדפדפן</h1>
+                <p class="demo-lead">הקבצים שמתפרסמים ב־npm: עיצוב וסקריפט מתיקיית dist. בלי bundler ובלי תלויות.</p>
+                <nav class="demo-links">
+                    <a href="https://www.npmjs.com/package/feedback-ui">npm</a>
+                    <a href="https://github.com/simcha-adler/feedback-ui">GitHub</a>
+                    <a href="https://github.com/simcha-adler/feedback-ui#readme">README</a>
+                </nav>
+            </div>
+            <div class="demo-tools">
+                <button type="button" id="demo-dir-toggle" class="demo-tool">LTR</button>
+                <button type="button" id="demo-theme-toggle" class="demo-tool">מערכת</button>
+            </div>
+        </header>
+
+        <p class="demo-note"><strong>מה רואים כאן.</strong> כל כפתור מפעיל את הספרייה כמו בדף HTML רגיל. כיוון העמוד וערכת הנושא חלים גם על הדיאלוגים.</p>
+
+        <section class="demo-section">
+            <h2>שימוש בסיסי</h2>
+            <p>מחרוזת או אובייקט. אותם כלים כמו alert, confirm ו־prompt — בלי לחסום את הדף.</p>
+            <div class="demo-grid">
+                <button type="button" id="simpalert1">הודעה פשוטה</button>
+                <button type="button" id="alert1">הודעה עם כותרת</button>
+                <button type="button" id="simpconfirm1">אישור פשוט</button>
+                <button type="button" id="confirm1">מחיקת רשומה</button>
+                <button type="button" id="simpprompt1">קלט פשוט</button>
+                <button type="button" id="prompt1">קלט עם ברירת מחדל</button>
+                <button type="button" id="menu1">תפריט פעולות</button>
+                <button type="button" id="form1">טופס חיבור</button>
+                <button type="button" id="selector1">רשימה עם חיפוש</button>
+            </div>
+        </section>
+
+        <section class="demo-section">
+            <h2>וריאציות</h2>
+            <p>כפתורים צבעוניים, שדות נוספים, רשימה בלי חיפוש.</p>
+            <div class="demo-grid">
+                <button type="button" id="simpalert2">הודעת אזהרה</button>
+                <button type="button" id="alert2">שגיאת התחברות</button>
+                <button type="button" id="simpconfirm2">אישור יציאה</button>
+                <button type="button" id="confirm2">שמירת שינויים</button>
+                <button type="button" id="simpprompt2">קלט אימייל</button>
+                <button type="button" id="prompt2">קלט חובה</button>
+                <button type="button" id="menu2">ייצוא דוח</button>
+                <button type="button" id="form2">טופס פרופיל</button>
+                <button type="button" id="selector2">רשימה בלי חיפוש</button>
+            </div>
+        </section>
+
+        <section class="demo-section">
+            <h2>טוסטים</h2>
+            <p>לא חוסמים. עד 5 גלויים. לא נסגרים עם סגירת כל הדיאלוגים.</p>
+            <div class="demo-grid">
+                <button type="button" id="success">הצלחה</button>
+                <button type="button" id="error">שגיאה</button>
+                <button type="button" id="warning">אזהרה</button>
+                <button type="button" id="info">מידע</button>
+            </div>
+        </section>
+
+        <section class="demo-section">
+            <h2>תור וכפילויות</h2>
+            <p>דיאלוג אחד על המסך. קריאות נוספות ממתינות. טוסטים נשארים מעל.</p>
+            <div class="demo-grid">
+                <button type="button" id="toasts">שישה טוסטים</button>
+                <button type="button" id="dialogs">ארבעה דיאלוגים</button>
+                <button type="button" id="toastsAndDialogs">טוסטים ודיאלוגים</button>
+                <button type="button" id="toastsWait">טוסטים עם המתנה</button>
+                <button type="button" id="dialogsWait">דיאלוגים ברצף</button>
+                <button type="button" id="toastsAndDialogsWait">מעורב עם המתנה</button>
+            </div>
+        </section>
+
+        <section class="demo-section">
+            <h2>בדיקות חוזה</h2>
+            <p>ערכי חזרה, ביטול עם X, ערכי קצה, טקסט מסוכן, סגירת הכול. התוצאה בטוסט וב־console.</p>
+            <div class="demo-grid">
+                <button type="button" id="test-queue">תור ו־Enter</button>
+                <button type="button" id="test-confirm-contract">חוזה אישור</button>
+                <button type="button" id="test-menu-falsy">ערכי קצה בתפריט</button>
+                <button type="button" id="test-selector-filter">סינון ברשימה</button>
+                <button type="button" id="test-escaping">טקסט מסוכן</button>
+                <button type="button" id="test-prompt-cancel">ביטול קלט</button>
+                <button type="button" id="test-size">גדלים צר ורחב</button>
+                <button type="button" id="test-close-all">סגירת הכול</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="../dist/feedback.min.js"></script>
+    <script src="./demo.js"></script>
+</body>
+
+</html>

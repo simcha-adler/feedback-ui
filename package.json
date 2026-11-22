@@ -45,6 +45,14 @@
         "name": "שמחה אדלר"
     },
     "license": "MIT",
+    "homepage": "https://simcha-adler.github.io/feedback-ui/demo/",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/simcha-adler/feedback-ui.git"
+    },
+    "bugs": {
+        "url": "https://github.com/simcha-adler/feedback-ui/issues"
+    },
     "devDependencies": {
         "esbuild": "^0.25.0"
     },
