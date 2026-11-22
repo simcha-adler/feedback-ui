@@ -286,6 +286,28 @@ document.getElementById('selector2').addEventListener('click', async () => {
     if (theme) Feedback.toast.info(`ערכת הנושא שונתה ל: ${theme}`);
 });
 
+document.getElementById('size-sm').addEventListener('click', async () => {
+    await Feedback.alert({
+        title: 'דיאלוג צר',
+        message: 'size: sm — בערך 20rem במקום 400px של md.',
+        size: 'sm',
+    });
+});
+
+document.getElementById('size-lg').addEventListener('click', async () => {
+    await Feedback.form({
+        title: 'טופס רחב',
+        message: 'size: lg — בערך 40rem, מתאים לשדות ארוכים.',
+        size: 'lg',
+        fields: [
+            { name: 'fullName', label: 'שם מלא', required: true, default: 'ישראל ישראלי' },
+            { name: 'notes', label: 'הערות', type: 'textarea', placeholder: 'שדה ארוך בטופס רחב' },
+        ],
+        confirmBtn: 'סגור',
+        cancelBtn: 'ביטול',
+    });
+});
+
 // --- כפילויות עם המתנה (Wait) ---
 
 document.getElementById('dialogsWait').addEventListener('click', async () => {

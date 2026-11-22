@@ -30,7 +30,7 @@
 ## ארכיטקטורה (סדר קריאה)
 
 1. **`fbEl(tag, props, children)`** — DOM בלי `innerHTML`. `text` → `textContent`. booleans → attribute ריק. אין לערב טקסט צרכן ב־HTML string.
-2. **`ScrollLock`** — `overflow: hidden` על `html` + פיצוי רוחב scrollbar ב־`paddingInlineEnd`. lock רק אם אין `saved`; unlock מחזיר inline styles.
+2. **`ScrollLock`** — `overflow: hidden` על `html` + פיצוי רוחב scrollbar ב־`paddingLeft`/`paddingRight` לפי הצד הפיזי שבו הפס נמדד (לא לפי `dir`). lock רק אם אין `saved`; unlock מחזיר inline styles.
 3. **`DialogQueue`** — דיאלוג **אחד** ב־`showModal`. `push` → `processQueue`. אחרי סגירה: `dialogDeleted` → הבא בתור. אם התור ריק: `ScrollLock.unlock` + `ToastManager.promote`.
 4. **`DialogManager.createDialog`** — תשתית לכל דיאלוג. המתודות (`alert`/`confirm`/…) רק `buildContent` + `onRender`.
 5. **`ToastManager`** — קונטיינר `#fb-toast-container` עם `popover="manual"`. מעל דיאלוג פתוח: מועבר **לתוך** ה־`<dialog>` (top-layer). בלי דיאלוג: `showPopover` אם יש טוסטים.
@@ -86,7 +86,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 - דיאלוג אחד פתוח. `close` חייב להיות idempotent (`closed`). בלי זה התור נשבר (שני `showModal`).
 - `cancel` על `<dialog>`: `preventDefault` + `close(dismissValue)`. בלי זה אין אנימציה / אין resolve.
 - Enter חוזר (`e.repeat`) על הדיאלוג: `preventDefault` + `stopPropagation` ב־capture. אחרת autofocus מאשר את הדיאלוג הבא בתור.
-- לחיצה על backdrop (`e.target === dialog`): רק אנימציית `fb-note`, **לא** סגירה. להסיר `fb-note` ב־`animationend` של `.fb-dialog-box` (לא ילדים) ובכניסה ל־`close`.
+- לחיצה על backdrop (`e.target === dialog`): רק אנימציית `fb-note`, **לא** סגירה. כניסה ב־`fb-opening` (לא animation ברירת מחדל על הקופסה). להסיר `fb-opening`/`fb-note` ב־`animationend` של `.fb-dialog-box` (לא ילדים) ובכניסה ל־`close`.
 - אחרי סגירה: `ToastManager.releaseFrom(dialog)` לפני `remove` — אחרת הקונטיינר נמחק עם הדיאלוג.
 - בניית DOM: `fbEl` / `createElement` / `textContent`. אסור `innerHTML` לטקסט צרכן.
 - מחלקות/מזהים: רק prefix `fb-`. לא להישען על CSS של המארח.

@@ -121,17 +121,20 @@
     padding: 1.5rem;
     border-radius: var(--fb-radius);
     box-shadow: var(--fb-shadow);
-    animation: fb-dialog-in var(--fb-duration) ease-out;
     scrollbar-width: thin;
     scrollbar-color: var(--fb-border) var(--fb-bg);
 }
 
-.fb-dialog.fb-closing .fb-dialog-box {
-    animation: fb-dialog-out var(--fb-duration) ease-in forwards;
+.fb-dialog.fb-opening .fb-dialog-box {
+    animation: fb-dialog-in var(--fb-duration) ease-out;
 }
 
 .fb-dialog.fb-note .fb-dialog-box {
     animation: fb-note-pulse 0.5s ease-in;
+}
+
+.fb-dialog.fb-closing .fb-dialog-box {
+    animation: fb-dialog-out var(--fb-duration) ease-in forwards;
 }
 
 .fb-dialog-header {
@@ -224,6 +227,17 @@
 .fb-dialog-footer {
     display: flex;
     justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.fb-dialog-dynamic-content > :not(.fb-dialog-footer) + .fb-dialog-footer {
+    margin-block-start: 0.5rem;
+}
+
+#fb-prompt-form,
+#fb-dynamic-form {
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
 }
 
@@ -354,10 +368,6 @@
         font-weight: 600;
         color: var(--fb-text);
     }
-}
-
-.fb-form-buttons {
-    margin-block-start: 0.5rem;
 }
 
 textarea.fb-form-input {

@@ -44,28 +44,40 @@ function getLocale() {
 
 
 const ScrollLock = {
-    /** @type {{ overflow: string, paddingInlineEnd: string } | null} */
+    /** @type {{ overflow: string, paddingLeft: string, paddingRight: string } | null} */
     saved: null,
+
+    /** @returns {'left' | 'right' | null} */
+    scrollbarSide() {
+        const html = document.documentElement;
+        const width = window.innerWidth - html.clientWidth;
+        if (width <= 0) return null;
+        // clientLeft כולל את פס ה-viewport כשהוא משמאל (לא probe פנימי, שמתנהג אחרת מחלון).
+        const borderLeft = parseFloat(getComputedStyle(html).borderLeftWidth) || 0;
+        return (html.clientLeft - borderLeft) >= width / 2 ? 'left' : 'right';
+    },
 
     lock() {
         if (this.saved) return;
         const html = document.documentElement;
-        const scrollbarWidth = window.innerWidth - html.clientWidth;
+        const width = window.innerWidth - html.clientWidth;
+        const side = width > 0 ? this.scrollbarSide() : null;
         this.saved = {
             overflow: html.style.overflow,
-            paddingInlineEnd: html.style.paddingInlineEnd,
+            paddingLeft: html.style.paddingLeft,
+            paddingRight: html.style.paddingRight,
         };
         html.style.overflow = 'hidden';
-        if (scrollbarWidth > 0) {
-            html.style.paddingInlineEnd = `${scrollbarWidth}px`;
-        }
+        if (side === 'left') html.style.paddingLeft = `${width}px`;
+        else if (side === 'right') html.style.paddingRight = `${width}px`;
     },
 
     unlock() {
         if (!this.saved) return;
         const html = document.documentElement;
         html.style.overflow = this.saved.overflow;
-        html.style.paddingInlineEnd = this.saved.paddingInlineEnd;
+        html.style.paddingLeft = this.saved.paddingLeft;
+        html.style.paddingRight = this.saved.paddingRight;
         this.saved = null;
     }
 };
@@ -239,7 +251,7 @@ const DialogManager = {
 
         return new Promise((resolve, reject) => {
             const dialog = /** @type {FbDialog} */ (document.createElement('dialog'));
-            dialog.className = 'fb-container fb-dialog';
+            dialog.className = 'fb-container fb-dialog fb-opening';
             if (size === 'sm' || size === 'lg') dialog.classList.add(`fb-dialog-${size}`);
             dialog.setAttribute('role', role);
             if (title) dialog.setAttribute('aria-labelledby', 'fb-dialog-title');
@@ -272,7 +284,7 @@ const DialogManager = {
             const close = (value) => {
                 if (closed) return;
                 closed = true;
-                dialog.classList.remove('fb-note');
+                dialog.classList.remove('fb-note', 'fb-opening');
                 dialog.classList.add('fb-closing');
 
                 setTimeout(() => {
@@ -309,7 +321,7 @@ const DialogManager = {
             dialog.addEventListener('click', (e) => {
                 // אם הלחיצה באלמנט הדיאלוג ולא בתוכן שלו (שזה בעצם ה-backdrop)
                 if (e.target === dialog) {
-                    dialog.classList.remove('fb-note');
+                    dialog.classList.remove('fb-opening', 'fb-note');
                     void dialog.offsetWidth; // מכריח את הדפדפן לשים לב להסרת הקלאס כדי שיפעיל בכל פעם את האנימציה מחדש.
                     dialog.classList.add('fb-note');
                 }
@@ -317,6 +329,7 @@ const DialogManager = {
 
             dialog.querySelector('.fb-dialog-box').addEventListener('animationend', (e) => {
                 if (e.target !== e.currentTarget) return;
+                dialog.classList.remove('fb-opening');
                 if (dialog.classList.contains('fb-note')) dialog.classList.remove('fb-note');
             });
 
