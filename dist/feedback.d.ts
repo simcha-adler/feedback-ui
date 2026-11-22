@@ -20,7 +20,7 @@
  * - `prompt` — שדה אחד. אישור = ערך; ביטול/X/Esc = `null`.
  * - `menu` — כמה כפתורי פעולה. אישור = `value` אם קיים המפתח, אחרת `undefined`; ביטול = `null`.
  * - `selector` — רשימה (אופציונלי חיפוש). אישור = `items[i].value`; ביטול = `null`.
- * - `form` — כמה שדות. אישור = אובייקט לפי `name`; ביטול = `null`.
+ * - `form` — כמה שדות. אישור = אובייקט פרימיטיבים לפי `name`; ביטול = `null`. `type` לא ברשימה דוחה את ה־Promise.
  * - `toast.success` / `info` / `warning` / `error` — לא חוסם, לא Promise. מחזיר `{ close() }`.
  * - `closeAll` — `void`. סוגר דיאלוג פתוח + תור. טוסטים לא נגעים.
  * - `setLocale` / `getLocale` — מילון ברירות מחדל (`he` כברירת מחדל). שפה אחרת = אובייקט `feedbackLocale`.
@@ -72,6 +72,16 @@ export type feedbackLocale = {
     selectorNoResults: string
     /** aria-label של רשימת selector */
     selectorList: string
+    /** ולידציה נייטיבית: שדה חובה ריק */
+    validationRequired: string
+    /** typeMismatch (email, url, …) */
+    validationType: string
+    validationMin: string
+    validationMax: string
+    validationStep: string
+    validationTooShort: string
+    validationTooLong: string
+    validationPattern: string
 }
 
 /** חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. sm ≈ 20rem, lg ≈ 40rem */
@@ -81,14 +91,15 @@ export type feedbackSize = 'sm' | 'md' | 'lg'
  * משתני CSS על ה־`<dialog>` של הקריאה הזו בלבד (`style.setProperty`).
  * מתים עם האלמנט — הדיאלוג הבא בתור לא יורש אותם.
  * מפתח חייב `/^--[A-Za-z_][A-Za-z0-9_-]*$/` (למשל `--fb-dialog-max`, `--fb-primary`).
- * ערך: מחרוזת או מספר (הופך למחרוזת). `null`/`undefined` על מפתח — דילוג.
- * מפתח לא תקין או ערך שאינו מחרוזת/מספר → throw סינכרוני `Error('Feedback: invalid CSS variable')`.
+ * ערך: מחרוזת CSS כמו בגיליון (`'32rem'`, `'#0f766e'`, `'0.2s'`). בלי המרה.
+ * `null`/`undefined` על מפתח — דילוג.
+ * מפתח לא תקין או ערך שאינו מחרוזת → throw סינכרוני `Error('Feedback: invalid CSS variable')`.
  * `vars` לא אובייקט (מערך, מחרוזת, …) → `Error('Feedback: invalid dialog vars')`.
  * חסר / `null` / `{}` — אין שינוי.
  * inline דורס `size` לאותו טוקן (`--fb-dialog-max` ב־`vars` מנצח את `sm`/`lg`).
  * לא על טוסטים. מחרוזת ל־alert/confirm/prompt לא מעבירה `vars`.
  */
-export type feedbackDialogVars = Record<string, string | number>
+export type feedbackDialogVars = Record<string, string | null | undefined>
 
 /**
  * מיקום קונטיינר הטוסטים. `start`/`end` לפי `dir` של המסמך (logical).
@@ -158,6 +169,16 @@ export type feedbackMenu<T = any> = {
     closeOnBackdrop?: boolean
 }
 
+/** שדה יחיד ב־`prompt`. חסר = `text`. */
+export type feedbackPromptType = 'text' | 'password' | 'email' | 'tel' | 'url' | 'search' | 'number'
+
+/** שדה ב־`form`. חסר = `text`. */
+export type feedbackFieldType =
+    | feedbackPromptType
+    | 'textarea'
+    | 'select'
+    | 'checkbox'
+
 export type feedbackPrompt = {
     message?: string
     title?: string
@@ -166,11 +187,12 @@ export type feedbackPrompt = {
     confirmBtn?: feedbackBtn
     cancelBtn?: feedbackBtn
     /**
-     * סוג `<input>`: text, password, number, email…
-     * רק `'number'` משנה את ערך החזרה (אותו coerce כמו `feedbackField`). שאר הטיפוסים → מחרוזת.
+     * סוג `<input>`: `text` (ברירת מחדל), `password`, `email`, `tel`, `url`, `search`, `number`.
+     * אחר → throw בבניית הדיאלוג (דוחה את ה־Promise, לפני `showModal`).
+     * רק `'number'` משנה את ערך החזרה (אותו coerce כמו `feedbackField`). שאר המותרים → מחרוזת.
      */
-    type?: string
-    /** ולידציה נייטיבית של הטופס — Enter לא סוגר אם לא תקין */
+    type?: feedbackPromptType
+    /** ולידציה נייטיבית — Enter לא סוגר אם לא תקין. הודעות מ־`feedbackLocale` (`validation*`), לא משפת הדפדפן. */
     required?: boolean
     min?: string | number
     max?: string | number
@@ -226,13 +248,16 @@ export type feedbackField = {
     name: string
     label: string
     /**
-     * text (ברירת מחדל), number, email, textarea, select, checkbox…
+     * `text` (ברירת מחדל), `password`, `email`, `tel`, `url`, `search`,
+     * `number`, `textarea`, `select`, `checkbox`. אחר (`file`, `date`, …) → throw
+     * בבניית הטופס, לפני `showModal` (דוחה את ה־Promise, כמו `name` לא חוקי).
      * checkbox: `default` truthy → מסומן; בתוצאה תמיד `true` / `false` (גם בלי סימון).
      * number: ריק/`null` → `undefined`; מספר סופי → `number`; אחרת (`NaN`/`Infinity`) → `undefined`.
      * select בלי `default`: שורה ריקה נבחרת (לא האופציה הראשונה).
-     * שאר הטיפוסים: מחרוזת (או `''`).
+     * שאר המותרים: מחרוזת (או `''`). תמיד פרימיטיב — לא `File`.
      */
-    type?: string
+    type?: feedbackFieldType
+    /** הודעות ולידציה מ־`feedbackLocale` (`validation*`) */
     required?: boolean
     default?: any
     placeholder?: string
@@ -285,10 +310,10 @@ export type FeedbackObject = {
      */
     menu: <T = any>(data: feedbackMenu<T>) => Promise<T | null | undefined>
     /**
-     * כמה שדות. אישור → `{ [field.name]: ערך מתואם }`. ביטול / X / Esc → `null`.
-     * ראו `feedbackField` ל־checkbox / number / select / `name`.
+     * כמה שדות. אישור → `{ [field.name]: פרימיטיב מתואם }`. ביטול / X / Esc → `null`.
+     * ראו `feedbackField` לטיפוסים המותרים / checkbox / number / select / `name`.
      */
-    form: (data: feedbackForm) => Promise<Record<string, any> | null>
+    form: (data: feedbackForm) => Promise<Record<string, string | number | boolean | undefined> | null>
     /**
      * רשימה. אישור → `items[i].value`. ביטול / X / Esc → `null`.
      */

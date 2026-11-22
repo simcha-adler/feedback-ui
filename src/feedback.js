@@ -219,6 +219,16 @@ function fbQA(root, tag, rest = '') {
     return /** @type {NodeListOf<HTMLElementTagNameMap[T]>} */ (root.querySelectorAll(tag + rest));
 }
 
+/** @type {readonly string[]} */
+const FORM_FIELD_TYPES = Object.freeze([
+    'text', 'password', 'email', 'tel', 'url', 'search',
+    'number', 'textarea', 'select', 'checkbox',
+]);
+/** @type {readonly string[]} */
+const PROMPT_FIELD_TYPES = Object.freeze([
+    'text', 'password', 'email', 'tel', 'url', 'search', 'number',
+]);
+
 /**@type {dialogManager} */
 const DialogManager = {
 
@@ -233,11 +243,50 @@ const DialogManager = {
         return `fb-btn fb-dialog-btn fb-btn-${name}${extra ? ` ${extra}` : ''}`;
     },
 
-    durationMs(el) {
-        const raw = getComputedStyle(el).getPropertyValue('--fb-duration').trim() || '0.2s';
-        const value = parseFloat(raw);
+    cssTimeToMs(raw) {
+        const token = String(raw || '').trim().split(',')[0].trim() || '0.2s';
+        const value = parseFloat(token);
         if (Number.isNaN(value)) return 200;
-        return raw.endsWith('ms') ? value : value * 1000;
+        if (token.endsWith('ms')) return value;
+        if (token.endsWith('s')) return value * 1000;
+        return 200;
+    },
+
+    durationMs(el) {
+        return DialogManager.cssTimeToMs(
+            getComputedStyle(el).getPropertyValue('--fb-duration').trim() || '0.2s',
+        );
+    },
+
+    /**
+     * @param {HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement} el
+     */
+    applyConstraintMessage(el) {
+        el.setCustomValidity('');
+        const v = el.validity;
+        if (v.valid) return;
+        if (v.valueMissing) el.setCustomValidity(fbStrings.validationRequired);
+        else if (v.typeMismatch) el.setCustomValidity(fbStrings.validationType);
+        else if (v.rangeUnderflow) el.setCustomValidity(fbStrings.validationMin);
+        else if (v.rangeOverflow) el.setCustomValidity(fbStrings.validationMax);
+        else if (v.stepMismatch) el.setCustomValidity(fbStrings.validationStep);
+        else if (v.tooShort) el.setCustomValidity(fbStrings.validationTooShort);
+        else if (v.tooLong) el.setCustomValidity(fbStrings.validationTooLong);
+        else if (v.patternMismatch) el.setCustomValidity(fbStrings.validationPattern);
+        else el.setCustomValidity(fbStrings.validationType);
+    },
+
+    /**
+     * @param {HTMLFormElement} formEl
+     * @returns {boolean} האם הטופס תקין (אחרי הודעות מהמילון)
+     */
+    reportFormValidity(formEl) {
+        for (const el of formEl.elements) {
+            if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+                DialogManager.applyConstraintMessage(el);
+            }
+        }
+        return formEl.reportValidity();
     },
 
     selectOption(opt) {
@@ -253,7 +302,7 @@ const DialogManager = {
             const n = Number(raw);
             return Number.isFinite(n) ? n : undefined;
         }
-        return raw ?? '';
+        return typeof raw === 'string' ? raw : '';
     },
 
     fieldName(name) {
@@ -261,6 +310,18 @@ const DialogManager = {
             throw new Error(`Feedback: שם שדה לא תקין: ${JSON.stringify(name)}`);
         }
         return name;
+    },
+
+    /**
+     * @param {unknown} type
+     * @param {readonly string[]} allowed
+     */
+    fieldType(type, allowed) {
+        const resolved = type == null || type === '' ? 'text' : type;
+        if (typeof resolved !== 'string' || !allowed.includes(resolved)) {
+            throw new Error(`Feedback: סוג שדה לא תקין: ${JSON.stringify(type)}`);
+        }
+        return resolved;
     },
 
     applyInputLimits(control, field) {
@@ -285,10 +346,10 @@ const DialogManager = {
                 throw new Error('Feedback: invalid CSS variable');
             }
             if (value == null) continue;
-            if (typeof value !== 'string' && typeof value !== 'number') {
+            if (typeof value !== 'string') {
                 throw new Error('Feedback: invalid CSS variable');
             }
-            out.push([key, String(value)]);
+            out.push([key, value]);
         }
         return out;
     },
@@ -513,20 +574,25 @@ const DialogManager = {
 
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
+        let inputType = 'text';
 
         return DialogManager.createDialog({
             title, message, size, closeOnBackdrop, vars,
             buildContent(root) {
+                inputType = DialogManager.fieldType(type, PROMPT_FIELD_TYPES);
                 const input = fbEl('input', {
-                    type,
+                    type: inputType,
                     className: 'fb-dialog-input',
                     placeholder,
                     required: !!required,
                     autofocus: true,
+                    ...(title
+                        ? { 'aria-labelledby': 'fb-dialog-title' }
+                        : { 'aria-label': placeholder || fbStrings.promptPlaceholder }),
                 });
                 input.value = defaultText;
                 DialogManager.applyInputLimits(input, { min, max, step });
-                root.append(fbEl('form', { id: 'fb-prompt-form' }, [
+                root.append(fbEl('form', { id: 'fb-prompt-form', novalidate: true }, [
                     input,
                     fbEl('div', { className: 'fb-dialog-buttons' }, [
                         fbEl('button', {
@@ -549,11 +615,14 @@ const DialogManager = {
                 const input = fbQ(overlay, 'input', '.fb-dialog-input');
                 const btnCancel = fbQ(overlay, 'button', '#fb-dialog-btn-cancel');
 
+                formEl.addEventListener('input', () => input.setCustomValidity(''));
                 formEl.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    close(DialogManager.coerceFieldValue({ type }, input.value));
+                    if (!DialogManager.reportFormValidity(formEl)) return;
+                    close(DialogManager.coerceFieldValue({ type: inputType }, input.value));
                 });
                 btnCancel.onclick = () => close(null);
+                if (input.value) input.select();
             }
         });
     },
@@ -572,14 +641,13 @@ const DialogManager = {
             vars,
             buildContent(root) {
                 if (searchable) {
-                    root.append(fbEl('div', { className: 'fb-dialog-selector-search-wrapper' }, [
-                        fbEl('input', {
-                            type: 'text',
-                            className: 'fb-dialog-selector-search',
-                            placeholder: searchPlaceholder,
-                            autofocus: true,
-                        }),
-                    ]));
+                    root.append(fbEl('input', {
+                        type: 'text',
+                        className: 'fb-dialog-selector-search',
+                        placeholder: searchPlaceholder,
+                        'aria-label': searchPlaceholder,
+                        autofocus: true,
+                    }));
                 }
                 const list = fbEl('ul', { className: 'fb-dialog-selector-list', 'aria-label': fbStrings.selectorList });
                 const emptyItem = fbEl('li', {
@@ -685,10 +753,10 @@ const DialogManager = {
             closeOnBackdrop,
             vars,
             buildContent(root) {
-                const formEl = fbEl('form', { id: 'fb-dynamic-form' });
+                const formEl = fbEl('form', { id: 'fb-dynamic-form', novalidate: true });
                 fields.forEach((field, index) => {
                     const name = DialogManager.fieldName(field.name);
-                    const type = field.type || 'text';
+                    const type = DialogManager.fieldType(field.type, FORM_FIELD_TYPES);
                     const id = `fb-input-${name}`;
                     const autofocus = index === 0;
                     const required = !!field.required;
@@ -759,7 +827,7 @@ const DialogManager = {
                     }
                     formEl.append(fbEl('div', { className: 'fb-form-group' }, [label, control]));
                 });
-                formEl.append(fbEl('div', { className: 'fb-dialog-buttons fb-form-buttons' }, [
+                formEl.append(fbEl('div', { className: 'fb-dialog-buttons' }, [
                     fbEl('button', {
                         type: 'submit',
                         className: DialogManager.btnClass(confirmBtn.theme),
@@ -782,8 +850,15 @@ const DialogManager = {
                 btnCancel.onclick = () => close(null);
 
                 // טיפול בשליחת הטופס (Submit)
+                formEl.addEventListener('input', (e) => {
+                    const t = e.target;
+                    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) {
+                        t.setCustomValidity('');
+                    }
+                });
                 formEl.addEventListener('submit', (e) => {
-                    e.preventDefault(); // מניעת ריענון העמוד
+                    e.preventDefault();
+                    if (!DialogManager.reportFormValidity(formEl)) return;
 
                     const formData = new FormData(formEl);
                     fbQA(formEl, 'input', '[type="checkbox"]').forEach((cb) => {
@@ -963,7 +1038,7 @@ const ToastManager = {
             container.appendChild(slot);
         }
 
-        const inMs = DialogManager.durationMs(container) * 2.5;
+        const inMs = DialogManager.cssTimeToMs(getComputedStyle(toast).animationDuration);
         if (inMs > 0) {
             others.forEach((el, i) => {
                 const dy = before[i].top - el.getBoundingClientRect().top;

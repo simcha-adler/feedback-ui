@@ -4,7 +4,9 @@
 
 - `closeOnBackdrop` אופציונלי על אובייקט דיאלוג. ברירת מחדל: הרקע לא סוגר. עם הדגל: סגירה בערך הביטול, רק אם press ו־release שניהם על הרקע.
 - `Feedback.setToastPosition` / `getToastPosition` — שישה מיקומים (`top|bottom`-`start|center|end`). ברירת מחדל `bottom-center`.
-- `vars` על אובייקט דיאלוג — משתני CSS למופע הזה בלבד (`--fb-dialog-max`, `--fb-primary`, …). לא דולף לתור הבא. לא על טוסטים.
+- `vars` על אובייקט דיאלוג — משתני CSS למופע הזה בלבד (`--fb-dialog-max`, `--fb-primary`, …). ערך מחרוזת כמו בגיליון, בלי המרת מספרים. לא דולף לתור הבא. לא על טוסטים.
+- הודעות ולידציה של `prompt`/`form` ממילון `feedbackLocale` (`validationRequired`, `validationType`, …), לא משפת הדפדפן.
+- `form` / `prompt`: רק טיפוסי קלט בסיסיים; ערך חזרה פרימיטיב בלבד. `type` לא ברשימה → דחיית ה־Promise בבנייה.
 
 ## 1.1.0
 

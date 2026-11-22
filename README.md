@@ -242,11 +242,12 @@ Feedback.setLocale({
 - **prompt / שדה `number`** — אותו coerce: ריק באישור → `undefined`; מספר סופי → `number`; `NaN` / `Infinity` → `undefined`.
 - **checkbox בטופס** — תמיד `true` / `false`.
 - **select בלי `default`** — שורה ריקה נבחרת, לא האופציה הראשונה.
-- **`form` עם `name` לא חוקי** — ה־Promise נדחה (לא throw סינכרוני). צריך `await` / `.catch`.
+- **`form` עם `name` או `type` לא חוקי** — ה־Promise נדחה (לא throw סינכרוני). צריך `await` / `.catch`. `type` מותר: `text` (ברירת מחדל), `password`, `email`, `tel`, `url`, `search`, `number`, `textarea`, `select`, `checkbox`. אחר (כולל `file`) נדחה בבנייה. ערכי השדות באישור הם רק פרימיטיבים (`string` / `number` / `boolean` / `undefined`).
+- **`prompt` עם `type` לא חוקי** — אותו דחיית Promise. מותר: `text`, `password`, `email`, `tel`, `url`, `search`, `number`.
 - **`closeAll`** — אם הסגירה כבר רצה, הערך שנבחר נשאר (אישור לא נהפך לביטול). דיאלוג חדש מחכה לאנימציה.
 - **טוסט** — `icon` הוא תו (emoji), לא HTML. `duration: 0` סוגר מיד. מיקום: `Feedback.setToastPosition('top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end')`. `start`/`end` לפי `dir`. ערך לא מוכר → `Error('Feedback: invalid toast position')`.
 - **`closeOnBackdrop`** — אופציונלי. ברירת מחדל לא סוגר. עם `true`: ערך הביטול של אותו סוג דיאלוג.
-- **`vars`** — אופציונלי. מפתחות `--שם` (כמו `--fb-dialog-max`). throw סינכרוני אם המפתח לא תקין (`Error('Feedback: invalid CSS variable')`) או אם `vars` לא אובייקט (`Error('Feedback: invalid dialog vars')`). דורס `size` לאותו טוקן. לא דולף לדיאלוג הבא.
+- **`vars`** — אופציונלי. מפתחות `--שם` (כמו `--fb-dialog-max`). ערך = מחרוזת CSS כמו בגיליון (`'32rem'`, `'0.2s'`), בלי המרת מספרים. throw סינכרוני אם המפתח לא תקין או שהערך אינו מחרוזת (`Error('Feedback: invalid CSS variable')`) או אם `vars` לא אובייקט (`Error('Feedback: invalid dialog vars')`). דורס `size` לאותו טוקן. לא דולף לדיאלוג הבא.
 
 ---
 

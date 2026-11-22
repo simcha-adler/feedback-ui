@@ -61,7 +61,7 @@ document.getElementById('confirm1').addEventListener('click', async () => {
 
 document.getElementById('simpprompt1').addEventListener('click', async () => {
     const name = await Feedback.prompt('אנא הזן את שמך:');
-    if (name) Feedback.toast.success(`שלום, ${name}!`);
+    if (name !== null) Feedback.toast.success(`שלום, ${name}!`);
 });
 
 document.getElementById('prompt1').addEventListener('click', async () => {
@@ -74,7 +74,7 @@ document.getElementById('prompt1').addEventListener('click', async () => {
         cancelBtn: 'ביטול'
     });
 
-    if (value) Feedback.toast.success(`שם הפרויקט שונה ל: ${value}`);
+    if (value !== null) Feedback.toast.success(`שם הפרויקט שונה ל: ${value}`);
 });
 
 document.getElementById('menu1').addEventListener('click', async () => {
@@ -88,7 +88,7 @@ document.getElementById('menu1').addEventListener('click', async () => {
         ]
     });
 
-    if (choice) Feedback.toast.info(`בחרת בפעולה: ${choice}`);
+    if (choice !== null) Feedback.toast.info(`בחרת בפעולה: ${choice}`);
 });
 
 document.getElementById('form1').addEventListener('click', async () => {
@@ -283,7 +283,7 @@ document.getElementById('selector2').addEventListener('click', async () => {
         ]
     });
 
-    if (theme) Feedback.toast.info(`ערכת הנושא שונתה ל: ${theme}`);
+    if (theme !== null) Feedback.toast.info(`ערכת הנושא שונתה ל: ${theme}`);
 });
 
 document.getElementById('size-sm').addEventListener('click', async () => {
@@ -313,7 +313,7 @@ document.getElementById('size-lg').addEventListener('click', async () => {
             { name: 'fullName', label: 'שם מלא', required: true, default: 'ישראל ישראלי' },
             { name: 'notes', label: 'הערות', type: 'textarea', placeholder: 'שדה ארוך בטופס רחב' },
         ],
-        confirmBtn: 'סגור',
+        confirmBtn: 'שלח',
         cancelBtn: 'ביטול',
     });
 });
@@ -466,7 +466,7 @@ document.getElementById('test-size').addEventListener('click', async () => {
             { name: 'fullName', label: 'שם מלא', required: true, default: 'בדיקה' },
             { name: 'notes', label: 'הערות', type: 'textarea', placeholder: 'שדה ארוך בטופס רחב' },
         ],
-        confirmBtn: 'סגור',
+        confirmBtn: 'שלח',
         cancelBtn: 'ביטול',
     });
 });
@@ -489,7 +489,9 @@ document.getElementById('test-backdrop-close').addEventListener('click', async (
 
 const toastPositions = ['top-start', 'top-center', 'top-end', 'bottom-start', 'bottom-center', 'bottom-end'];
 document.getElementById('toast-position').addEventListener('click', () => {
-    document.querySelectorAll('#fb-toast-container .fb-toast-slot').forEach((el) => el.remove());
+    document.querySelectorAll('#fb-toast-container .fb-toast-close').forEach((btn) => {
+        if (btn instanceof HTMLElement) btn.click();
+    });
     const current = Feedback.getToastPosition();
     const i = toastPositions.indexOf(current);
     const next = toastPositions[(i + 1) % toastPositions.length];

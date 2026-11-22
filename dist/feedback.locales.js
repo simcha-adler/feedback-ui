@@ -21,6 +21,14 @@ export const he = {
     selectorEmpty: 'אין פריטים',
     selectorNoResults: 'אין תוצאות',
     selectorList: 'רשימת אפשרויות',
+    validationRequired: 'יש למלא את השדה',
+    validationType: 'הערך אינו בפורמט הנכון',
+    validationMin: 'הערך קטן מהמינימום',
+    validationMax: 'הערך גדול מהמקסימום',
+    validationStep: 'הערך אינו תואם לצעדים המותרים',
+    validationTooShort: 'הטקסט קצר מדי',
+    validationTooLong: 'הטקסט ארוך מדי',
+    validationPattern: 'הערך אינו תואם לתבנית',
 };
 
 /** @type {feedbackLocale} */
@@ -40,6 +48,14 @@ export const en = {
     selectorEmpty: 'No items',
     selectorNoResults: 'No results',
     selectorList: 'Options list',
+    validationRequired: 'Please fill in this field',
+    validationType: 'The value is not in the correct format',
+    validationMin: 'The value is below the minimum',
+    validationMax: 'The value is above the maximum',
+    validationStep: 'The value does not match the allowed steps',
+    validationTooShort: 'The text is too short',
+    validationTooLong: 'The text is too long',
+    validationPattern: 'The value does not match the pattern',
 };
 
 /** @type {{ he: feedbackLocale, en: feedbackLocale }} */

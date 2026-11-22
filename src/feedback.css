@@ -130,7 +130,7 @@
 }
 
 .fb-dialog.fb-note .fb-dialog-box {
-    animation: fb-note-pulse 0.5s ease-in;
+    animation: fb-note-pulse calc(var(--fb-duration) * 2.5) ease-in;
 }
 
 .fb-dialog.fb-closing .fb-dialog-box {

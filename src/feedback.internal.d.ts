@@ -63,9 +63,13 @@ export type dialogManager = {
     convertBtn: (btn?: feedbackBtn) => { text: string, theme?: themeString }
     btnClass: (theme?: themeString, extra?: string) => string
     durationMs: (el: Element) => number
+    cssTimeToMs: (raw: string) => number
+    applyConstraintMessage: (el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) => void
+    reportFormValidity: (formEl: HTMLFormElement) => boolean
     selectOption: (opt: string | { value: any, text: string }) => { value: any, text: string }
-    coerceFieldValue: (field: Pick<feedbackField, 'type'>, raw: FormDataEntryValue | null) => any
+    coerceFieldValue: (field: Pick<feedbackField, 'type'>, raw: FormDataEntryValue | null) => string | number | boolean | undefined
     fieldName: (name: string) => string
+    fieldType: (type: unknown, allowed: readonly string[]) => string
     applyInputLimits: (control: HTMLElement, field: Pick<feedbackField, 'min' | 'max' | 'step'>) => void
     normalizeDialogVars: (vars?: unknown) => [string, string][]
     createDialog: (data: feedbackDialog) => Promise<any | void | null>
@@ -73,7 +77,7 @@ export type dialogManager = {
     confirm: (data: feedbackConfirm) => Promise<boolean>
     prompt: (data: feedbackPrompt) => Promise<string | number | undefined | null>
     menu: <T = any>(data: feedbackMenu<T>) => Promise<T | null | undefined>
-    form: (data: feedbackForm) => Promise<Record<string, any> | null>
+    form: (data: feedbackForm) => Promise<Record<string, string | number | boolean | undefined> | null>
     selector: <T = any>(data: feedbackSelector<T>) => Promise<T | null>
 }
 

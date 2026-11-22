@@ -68,11 +68,12 @@ Feedback.* → DialogManager.* → createDialog → Promise
 
 - `size`: `'sm'` / `'md'` / `'lg'`. חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. לא `className` ציבורי.
 - `closeOnBackdrop`: חסר/`false` — backdrop לא סוגר. `true` רק על אובייקט הקריאה (לא על מחרוזת). סגירה = אותו `dismissValue` כמו X/Esc. רק אם `pointerdown` ו־`pointerup` שניהם `e.target === dialog` וכפתור ראשי (`button === 0`). גרירה מהקופסה לרקע לא סוגרת. `pointercancel` מאפס. בלי הדגל: אותו תנאי מפעיל `fb-note` במקום סגירה.
-- `vars`: אופציונלי על אובייקט דיאלוג (לא מחרוזת, לא טוסט). `normalizeDialogVars` לפני ה־Promise — throw סינכרוני, בלי כניסה לתור. מפתח `/^--[A-Za-z_][A-Za-z0-9_-]*$/`; ערך מחרוזת/מספר; `null` על מפתח = דילוג. לא אובייקט → `Error('Feedback: invalid dialog vars')`; מפתח/ערך לא תקין → `Error('Feedback: invalid CSS variable')`. `setProperty` על ה־`<dialog>`. inline דורס `size` לאותו טוקן. המופע הבא בלי `vars` חוזר לברירת המחדל. אין `className` ציבורי.
+- `vars`: אופציונלי על אובייקט דיאלוג (לא מחרוזת, לא טוסט). `normalizeDialogVars` לפני ה־Promise — throw סינכרוני, בלי כניסה לתור. מפתח `/^--[A-Za-z_][A-Za-z0-9_-]*$/`; ערך מחרוזת CSS כמו בגיליון (בלי המרה); `null` על מפתח = דילוג. לא אובייקט → `Error('Feedback: invalid dialog vars')`; מפתח לא תקין או ערך שאינו מחרוזת → `Error('Feedback: invalid CSS variable')`. `setProperty` על ה־`<dialog>`. inline דורס `size` לאותו טוקן. המופע הבא בלי `vars` חוזר לברירת המחדל. אין `className` ציבורי.
 - `confirm` תמיד `boolean`. צרכן שכותב `if (result)` ו־`if (!result)` חייב להיות נכון גם ל־X/Esc.
 - `menu`: `0` / `''` / `false` הם ערכים חוקיים. אסור לבדוק `if (item.value)` כדי להחליט אם להחזיר. רק `Object.hasOwn(item, 'value')`.
-- `coerceFieldValue`: `checkbox` → `raw === 'true'` (boolean). `number` ריק/`null` → `undefined`; `Number` סופי → number; אחרת `undefined`. שאר הטיפוסים → מחרוזת (או `''`).
+- `coerceFieldValue`: רק פרימיטיבים. `checkbox` → `raw === 'true'` (boolean). `number` ריק/`null` → `undefined`; `Number` סופי → number; אחרת `undefined`. שאר טיפוס מותר → מחרוזת (או `''`). אין `File`.
 - `prompt` עם `type: 'number'` משתמש באותו coerce.
+- `field.type` / `prompt.type`: רשימה סגורה. חסר = `text`. אחר (`file`, `date`, …) → `throw` בבניית הטופס/הדיאלוג, לפני `showModal` (דוחה את ה־Promise, כמו `name`). form: `text` `password` `email` `tel` `url` `search` `number` `textarea` `select` `checkbox`. prompt: בלי `textarea`/`select`/`checkbox`.
 - `field.name` חייב `/^[A-Za-z_][A-Za-z0-9_-]*$/` — אחרת `throw`. לא לשנות את ה־regex בלי אישור.
 - כפתור: מחרוזת או `{ text, theme? }`. `convertBtn`: מחרוזת → `{ text, theme: '' }`. `theme` ריק → מחלקה `fb-btn-primary`. ביטול בלי theme → `secondary`.
 - `role`: `alert`/`confirm` = `alertdialog`; השאר `dialog`.
@@ -80,7 +81,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 - `setToastPosition(pos)`: רק `'top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end'`. אחרת `throw Error('Feedback: invalid toast position')`. מחלקה `fb-toast-pos-{pos}` על הקונטיינר. `start`/`end` logical לפי `dir`. פינות: רק `inset-inline-*`, בלי `left`/`right` (אחרת `end` נוחת ב-`start`). כניסה אנכית `±1.25rem`; צד `2rem`; `:dir(rtl)` הופך סימן X. חל מיד; לא יוצר קונטיינר אם אין טוסטים. לא per-toast. לא משנה דיאלוגים. ברירת מחדל `bottom-center`.
 - `closeAll` לא נוגע בטוסטים. דיאלוג שעוד לא הוצג: `resolve(dismissValue)` בלי `showModal`. הפתוח: אותו `close(dismissValue)` כמו X.
 - טקסט צרכן = טקסט בלבד. `\n` בהודעה: `white-space: pre-line` ב־CSS.
-- טקסט מובנה (כותרת/כפתור/placeholder/aria כשחסר בקריאה) רק מ־`fbStrings` / `feedback.locales.js`. ברירת מחדל `he`. לא לזהות מ־`<html lang>`. לא לשנות מפתחות `feedbackLocale` בלי אישור.
+- טקסט מובנה (כותרת/כפתור/placeholder/aria/הודעות ולידציה כשחסר בקריאה) רק מ־`fbStrings` / `feedback.locales.js`. ברירת מחדל `he`. לא לזהות מ־`<html lang>`. לא לשנות מפתחות `feedbackLocale` בלי אישור.
 - `setLocale('en'|'he')` מחליף מילון שלם. אובייקט: מיזוג על `he`, רק מפתחות קיימים שהם `string`. מזהה לא מוכר → `throw Error('Feedback: invalid locale')`. חל על דיאלוגים/טוסטים חדשים. לא משנה `dir`.
 - ייצוא npm נוסף לקטלוג: `feedback-ui/locales` (לא ייצוא שני מ־`feedback.js`). הקובץ ב־dist לא ממוזער.
 
