@@ -55,6 +55,7 @@ python -m http.server 5502
 | `form({ fields })` | כמה שדות | אובייקט לפי `name`, `null` בביטול |
 | `toast.success` / `info` / `warning` / `error` | הודעה קצרה בלי לחסום | `{ close() }` — לא Promise |
 | `closeAll()` | סגירת דיאלוג פתוח + ריקון התור | `void` — כל Promise נפתר כמו ביטול |
+| `setLocale` / `getLocale` | מילון טקסטים מובנים | `void` / עותק המילון. ברירת מחדל עברית |
 
 דיאלוג אחד בלבד על המסך. קריאות נוספות נכנסות לתור ומופיעות אחרי שהקודם נסגר. לכל דיאלוג כפתור X; X ו־Esc = ביטול. לחיצה על הרקע לא סוגרת.
 
@@ -128,6 +129,80 @@ Feedback.closeAll();
 `theme`: `primary` · `secondary` · `danger` · `warning` · `success` · `error` · `info` · `outline`.
 
 טקסט צרכן (כותרת, הודעה, תוויות, טוסט) מוצג כטקסט — לא כ־HTML. `\n` בהודעת דיאלוג נשבר לשורה חדשה.
+
+---
+
+## שפה (טקסטים מובנים)
+
+ברירות כותרת, כפתור, placeholder ו־aria-label מגיעות ממילון. ברירת המחדל **עברית**. מה שהועבר בקריאה (`title`, `confirmBtn`, …) לא משתנה. `dir` נשאר מהמסמך.
+
+```js
+Feedback.setLocale('en');   // אנגלית מובנית
+Feedback.setLocale('he');   // חזרה לעברית
+Feedback.getLocale();       // עותק של המילון הפעיל
+```
+
+בלי bundler, אחרי `feedback.min.js`:
+
+```html
+<script src="./dist/feedback.min.js"></script>
+<script>
+  Feedback.setLocale('en');
+</script>
+```
+
+הקטלוג המלא (לא ממוזער) ב־`dist/feedback.locales.js`. ב־npm:
+
+```js
+import { Feedback } from 'feedback-ui';
+import { FeedbackLocales } from 'feedback-ui/locales';
+
+Feedback.setLocale(FeedbackLocales.en);
+```
+
+### שפה אחרת
+
+אין `setLocale('fr')` מובנה. מעתיקים את המבנה, מתרגמים את הערכים, מעבירים ל־`setLocale`. מפתח שחסר או שאינו מחרוזת נשאר בעברית.
+
+```js
+Feedback.setLocale({
+  closeDialog: 'Fermer la fenêtre',
+  closeToast: 'Fermer',
+  ok: 'OK',
+  cancel: 'Annuler',
+  save: 'Enregistrer',
+  alertTitle: 'Message',
+  confirmTitle: 'Confirmation requise',
+  menuTitle: 'Choisir une action',
+  inputTitle: 'Saisie',
+  promptPlaceholder: 'Saisir ici…',
+  selectorTitle: 'Choisir une option',
+  selectorSearch: 'Rechercher dans la liste…',
+  selectorEmpty: 'Aucun élément',
+  selectorNoResults: 'Aucun résultat',
+  selectorList: 'Liste des options',
+});
+```
+
+| מפתח | מתי מופיע |
+|---|---|
+| `closeDialog` | aria-label של X בדיאלוג |
+| `closeToast` | aria-label של X בטוסט |
+| `ok` | כפתור אישור ב־alert / confirm |
+| `cancel` | כפתור ביטול |
+| `save` | כפתור אישור ב־prompt / form |
+| `alertTitle` | כותרת alert |
+| `confirmTitle` | כותרת confirm |
+| `menuTitle` | כותרת menu |
+| `inputTitle` | כותרת prompt ו־form |
+| `promptPlaceholder` | placeholder ב־prompt |
+| `selectorTitle` | כותרת selector |
+| `selectorSearch` | placeholder חיפוש ב־selector |
+| `selectorEmpty` | רשימה ריקה |
+| `selectorNoResults` | חיפוש בלי תוצאות |
+| `selectorList` | aria-label של רשימת selector |
+
+חל רק על דיאלוג/טוסט שנפתח **אחרי** הקריאה. מזהה לא מוכר → `Error('Feedback: invalid locale')`.
 
 ---
 

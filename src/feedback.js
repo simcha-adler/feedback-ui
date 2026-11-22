@@ -3,13 +3,44 @@
 * feedback.js - ספריה עצמאית לניהול חלונות קופצים מעוצבים
 */
 
+import { FeedbackLocales } from './feedback.locales.js';
+
 /**
  * @typedef {import('./feedback.internal.d.ts').dialogManager} dialogManager
  * @typedef {import('./feedback.internal.d.ts').toast} toast
  * @typedef {import('./feedback.internal.d.ts').FbDialog} FbDialog
  * @typedef {import('./feedback.internal.d.ts').FbToast} FbToast
  * @typedef {import('./feedback.d.ts').FeedbackObject} FeedbackObject
+ * @typedef {import('./feedback.d.ts').feedbackLocale} feedbackLocale
+ * @typedef {import('./feedback.d.ts').feedbackLocaleId} feedbackLocaleId
  */
+
+/** @type {feedbackLocale} */
+let fbStrings = { ...FeedbackLocales.he };
+
+/**
+ * @param {feedbackLocaleId | Partial<feedbackLocale>} locale
+ */
+function setLocale(locale) {
+    if (locale === 'he' || locale === 'en') {
+        fbStrings = { ...FeedbackLocales[locale] };
+        return;
+    }
+    if (locale && typeof locale === 'object') {
+        const next = { ...FeedbackLocales.he };
+        for (const key of /** @type {(keyof feedbackLocale)[]} */ (Object.keys(FeedbackLocales.he))) {
+            if (typeof locale[key] === 'string') next[key] = locale[key];
+        }
+        fbStrings = next;
+        return;
+    }
+    throw new Error('Feedback: invalid locale');
+}
+
+/** @returns {feedbackLocale} */
+function getLocale() {
+    return { ...fbStrings };
+}
 
 
 const ScrollLock = {
@@ -222,7 +253,7 @@ const DialogManager = {
             header.append(fbEl('button', {
                 type: 'button',
                 className: 'fb-dialog-close',
-                'aria-label': 'סגור חלון',
+                'aria-label': fbStrings.closeDialog,
             }, [
                 fbEl('span', { className: 'fb-dialog-close-icon', 'aria-hidden': 'true', text: '\u00d7' }),
             ]));
@@ -308,7 +339,7 @@ const DialogManager = {
     },
 
     // הודעת אישור (Alert) פשוטה
-    alert({ message, title = 'הודעה', btn = 'אישור', size }) {
+    alert({ message, title = fbStrings.alertTitle, btn = fbStrings.ok, size }) {
         btn = DialogManager.convertBtn(btn);
         return DialogManager.createDialog({
             title, message, size, dismissValue: undefined, role: 'alertdialog',
@@ -329,7 +360,7 @@ const DialogManager = {
     },
 
     //אישור או ביטול פעולה
-    confirm({ message, title = 'אישור נדרש', confirmBtn, cancelBtn, size }) {
+    confirm({ message, title = fbStrings.confirmTitle, confirmBtn, cancelBtn, size }) {
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
@@ -342,13 +373,13 @@ const DialogManager = {
                         id: 'fb-dialog-btn-confirm',
                         className: DialogManager.btnClass(confirmBtn?.theme),
                         autofocus: true,
-                        text: confirmBtn?.text || 'אישור',
+                        text: confirmBtn?.text || fbStrings.ok,
                     }),
                     fbEl('button', {
                         type: 'button',
                         id: 'fb-dialog-btn-cancel',
                         className: DialogManager.btnClass(cancelBtn?.theme || 'secondary'),
-                        text: cancelBtn?.text || 'ביטול',
+                        text: cancelBtn?.text || fbStrings.cancel,
                     }),
                 ]));
             },
@@ -360,7 +391,7 @@ const DialogManager = {
     },
 
     // אישור פעולה עם אפשרויות מרובות או תפריט פעולות
-    menu({ message, title = 'בחר פעולה', buttons, cancelBtn = 'ביטול', size }) {
+    menu({ message, title = fbStrings.menuTitle, buttons, cancelBtn = fbStrings.cancel, size }) {
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
         return DialogManager.createDialog({
@@ -379,7 +410,7 @@ const DialogManager = {
                     fbEl('button', {
                         type: 'button',
                         className: DialogManager.btnClass(cancelBtn.theme || 'secondary', 'fb-limited'),
-                        text: cancelBtn.text || 'ביטול',
+                        text: cancelBtn.text || fbStrings.cancel,
                     }),
                 ]));
             },
@@ -400,7 +431,7 @@ const DialogManager = {
     },
 
     // בקשת קלט (Prompt)
-    prompt({ message, title = 'הזנת נתונים', defaultText = '', placeholder = 'הקלד כאן...', confirmBtn = 'שמור', cancelBtn = 'ביטול', type = 'text', required = false, min, max, step, size }) {
+    prompt({ message, title = fbStrings.inputTitle, defaultText = '', placeholder = fbStrings.promptPlaceholder, confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, type = 'text', required = false, min, max, step, size }) {
 
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
@@ -450,8 +481,8 @@ const DialogManager = {
     },
 
     // חלון בחירה מתוך רשימה נגללת (Selector)
-    selector({ items = [], title = 'בחר אפשרות', message = '', cancelBtn = 'ביטול',
-        searchable = false, searchPlaceholder = 'חיפוש ברשימה...', size }) {
+    selector({ items = [], title = fbStrings.selectorTitle, message = '', cancelBtn = fbStrings.cancel,
+        searchable = false, searchPlaceholder = fbStrings.selectorSearch, size }) {
 
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
@@ -470,11 +501,11 @@ const DialogManager = {
                         }),
                     ]));
                 }
-                const list = fbEl('ul', { className: 'fb-dialog-selector-list', 'aria-label': 'רשימת אפשרויות' });
+                const list = fbEl('ul', { className: 'fb-dialog-selector-list', 'aria-label': fbStrings.selectorList });
                 const emptyItem = fbEl('li', {
                     className: 'fb-selector-empty',
                     hidden: items.length > 0,
-                    text: 'אין פריטים',
+                    text: fbStrings.selectorEmpty,
                 });
                 list.append(emptyItem);
                 items.forEach((item, index) => {
@@ -519,7 +550,7 @@ const DialogManager = {
                 const syncEmpty = () => {
                     const visible = visibleButtons().length;
                     emptyItem.hidden = visible > 0;
-                    emptyItem.textContent = items.length === 0 ? 'אין פריטים' : 'אין תוצאות';
+                    emptyItem.textContent = items.length === 0 ? fbStrings.selectorEmpty : fbStrings.selectorNoResults;
                 };
                 syncEmpty();
 
@@ -563,7 +594,7 @@ const DialogManager = {
         });
     },
 
-    form({ title = 'הזנת נתונים', message = '', fields = [], confirmBtn = 'שמור', cancelBtn = 'ביטול', size }) {
+    form({ title = fbStrings.inputTitle, message = '', fields = [], confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, size }) {
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
@@ -765,7 +796,7 @@ const ToastManager = {
         toast.append(
             fbEl('span', { className: 'fb-toast-icon', 'aria-hidden': 'true', text: icon }),
             fbEl('span', { className: 'fb-toast-text', text }),
-            fbEl('button', { type: 'button', className: 'fb-toast-close', 'aria-label': 'סגור' }, [
+            fbEl('button', { type: 'button', className: 'fb-toast-close', 'aria-label': fbStrings.closeToast }, [
                 fbEl('span', { 'aria-hidden': 'true', text: '\u00d7' }),
             ]),
         );
@@ -875,6 +906,8 @@ export const Feedback = {
     form: DialogManager.form,
     selector: DialogManager.selector,
     closeAll: () => DialogQueue.closeAll(),
+    setLocale,
+    getLocale,
     toast: {
         success: ToastManager.success,
         info: ToastManager.info,

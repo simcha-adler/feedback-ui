@@ -23,6 +23,7 @@
  * - `form` — כמה שדות. אישור = אובייקט לפי `name`; ביטול = `null`.
  * - `toast.success` / `info` / `warning` / `error` — לא חוסם, לא Promise. מחזיר `{ close() }`.
  * - `closeAll` — `void`. סוגר דיאלוג פתוח + תור. טוסטים לא נגעים.
+ * - `setLocale` / `getLocale` — מילון ברירות מחדל (`he` כברירת מחדל). שפה אחרת = אובייקט `feedbackLocale`.
  *
  * התנהגות:
  * - דיאלוג אחד על המסך. קריאה נוספת נכנסת לתור.
@@ -32,11 +33,43 @@
  * - כותרת, הודעה, תוויות וטוסט הם טקסט (`textContent`), לא HTML. `\n` בהודעת דיאלוג נשבר לשורה.
  * - `dir` מגיע מהמסמך. אין `className` ציבורי על דיאלוג.
  * - כפתור: מחרוזת (הטקסט) או `{ text, theme? }`. בלי theme / `theme: ''` → primary. ביטול בלי theme → secondary.
- * - ברירות כותרת/כפתור כשחסר (עברית): alert `הודעה`/`אישור`; confirm `אישור נדרש`/`אישור`/`ביטול`;
- *   prompt ו־form `הזנת נתונים`/`שמור`/`ביטול`; menu `בחר פעולה`/`ביטול`; selector `בחר אפשרות`/`ביטול`.
+ * - ברירות כותרת/כפתור/aria כשחסר — מ־`Feedback.getLocale()`. ברירת מחדל `he`.
+ *   `setLocale('en' | 'he')` או `setLocale({ ok: 'OK', … })`. מפתח חסר באובייקט נופל ל־he.
+ *   מבנה מלא: `feedbackLocale` / `feedback-ui/locales`. לא משנה `dir`.
  */
 
 export type themeString = 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'error' | 'info' | 'outline' | '';
+
+export type feedbackLocaleId = 'he' | 'en'
+
+/**
+ * מילון טקסטים מובנים. מפתחות יציבים — שפה אחרת = אותם מפתחות, ערכים מתורגמים.
+ * לא כולל הודעות צרכן, `×`, אייקוני טוסט, או `Error('Feedback: failed to show dialog')`.
+ */
+export type feedbackLocale = {
+    /** aria-label של כפתור X בדיאלוג */
+    closeDialog: string
+    /** aria-label של כפתור X בטוסט */
+    closeToast: string
+    /** כפתור אישור ב-alert / confirm */
+    ok: string
+    /** כפתור ביטול */
+    cancel: string
+    /** כפתור אישור ב-prompt / form */
+    save: string
+    alertTitle: string
+    confirmTitle: string
+    menuTitle: string
+    /** כותרת ברירת מחדל ל-prompt ול-form */
+    inputTitle: string
+    promptPlaceholder: string
+    selectorTitle: string
+    selectorSearch: string
+    selectorEmpty: string
+    selectorNoResults: string
+    /** aria-label של רשימת selector */
+    selectorList: string
+}
 
 /** חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. sm ≈ 20rem, lg ≈ 40rem */
 export type feedbackSize = 'sm' | 'md' | 'lg'
@@ -204,6 +237,15 @@ export type FeedbackObject = {
      * לא נוגע בטוסטים.
      */
     closeAll: () => void
+    /**
+     * מחליף את מילון ברירות המחדל. חל על דיאלוגים/טוסטים **חדשים** בלבד.
+     * `'he'` / `'en'` — חבילות מובנות. אובייקט — מיזוג על `he` (רק מפתחות מ־`feedbackLocale` שהם מחרוזת).
+     * מזהה לא מוכר או ערך לא אובייקט/לא מחרוזת מזהה → `throw Error('Feedback: invalid locale')`.
+     * לא משנה `dir` ולא דורס `title` / כפתור / placeholder שהועברו בקריאה.
+     */
+    setLocale: (locale: feedbackLocaleId | Partial<feedbackLocale>) => void
+    /** עותק של המילון הפעיל. שינוי העותק לא משפיע על הספרייה. */
+    getLocale: () => feedbackLocale
     /**
      * הודעות קצרות, לא חוסמות. לא Promise. מיקום: תחתית-מרכז.
      * ברירת משך: success/info 3000, warning 3500, error 4000 (ms).

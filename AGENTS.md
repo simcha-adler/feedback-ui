@@ -2,7 +2,7 @@
 
 ספריית UI לדפדפן: דיאלוגים (`<dialog>.showModal`) וטוסטים. אפס runtime deps. ייצוא ציבורי יחיד: `Feedback`.
 
-מקור האמת: `src/feedback.js`, `src/feedback.css`, `src/feedback.d.ts`.  
+מקור האמת: `src/feedback.js`, `src/feedback.css`, `src/feedback.d.ts`, `src/feedback.locales.js`.  
 לא לקחת חוזים מ־`המלצות לשיפור הספרייה.md`, `docs/שיפורי ספריית דיאלוג.md`, או `docs/archive/` — אלה היסטוריה.
 
 ---
@@ -14,9 +14,11 @@
 | `src/feedback.js` | כל הלוגיקה. אובייקטים פנימיים + `export const Feedback` |
 | `src/feedback.css` | כל העיצוב. prefix `fb-`. tokens ב־`.fb-container` |
 | `src/feedback.d.ts` | טיפוסים ציבוריים + חוזה לסוכן צרכן. `scripts/build.js` מעתיק ל־`dist/` |
+| `src/feedback.locales.js` | מילוני `he`/`en`. לא ממוזער. מועתק ל־`dist/` |
+| `src/feedback.locales.d.ts` | טיפוסי הקטלוג. מועתק ל־`dist/` |
 | `src/feedback.internal.d.ts` | טיפוסי פנים ל־JSDoc בלבד. לא מפורסם |
 | `src/feedback.iife.js` | `globalThis.Feedback = Feedback` ל־IIFE |
-| `scripts/build.js` | ESM + IIFE ממוזער + CSS ממוזער + העתקת d.ts |
+| `scripts/build.js` | ESM + IIFE ממוזער + CSS ממוזער + העתקת d.ts + העתקת locales |
 | `demo/` | דמו ללקוח. טוען **dist** (CSS + IIFE), לא src |
 | `docs/בדיקות.md` | תרחישי חוזה ידניים מול הדמו |
 | `dist/` | פלט בילד, בגיט. `package.json` מפרסם רק אותו |
@@ -59,6 +61,8 @@ Feedback.* → DialogManager.* → createDialog → Promise
 | `selector` | `items[i].value` | `null` |
 | `form` | אובייקט `{ [field.name]: coerced }` | `null` |
 | `closeAll` | `void` — הפתוח נסגר באנימציה; שאר התור `dismissValue` מיד | כמו X/Esc לכל Promise |
+| `setLocale` | `void` — מחליף מילון ברירות. `'he'`/`'en'` או `Partial<feedbackLocale>` | לא סוגר דיאלוגים |
+| `getLocale` | עותק של המילון הפעיל | — |
 
 - `size`: `'sm'` / `'md'` / `'lg'`. חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. לא `className` ציבורי.
 - `confirm` תמיד `boolean`. צרכן שכותב `if (result)` ו־`if (!result)` חייב להיות נכון גם ל־X/Esc.
@@ -71,6 +75,9 @@ Feedback.* → DialogManager.* → createDialog → Promise
 - טוסט: לא Promise. מחזיר `{ close }`. ברירות משך: success/info 3000, warning 3500, error 4000. מקס' 5 גלויים (`:not(.fb-closing)`); עודף דוחה את הישן ב־`_fbDismiss`.
 - `closeAll` לא נוגע בטוסטים. דיאלוג שעוד לא הוצג: `resolve(dismissValue)` בלי `showModal`. הפתוח: אותו `close(dismissValue)` כמו X.
 - טקסט צרכן = טקסט בלבד. `\n` בהודעה: `white-space: pre-line` ב־CSS.
+- טקסט מובנה (כותרת/כפתור/placeholder/aria כשחסר בקריאה) רק מ־`fbStrings` / `feedback.locales.js`. ברירת מחדל `he`. לא לזהות מ־`<html lang>`. לא לשנות מפתחות `feedbackLocale` בלי אישור.
+- `setLocale('en'|'he')` מחליף מילון שלם. אובייקט: מיזוג על `he`, רק מפתחות קיימים שהם `string`. מזהה לא מוכר → `throw Error('Feedback: invalid locale')`. חל על דיאלוגים/טוסטים חדשים. לא משנה `dir`.
+- ייצוא npm נוסף לקטלוג: `feedback-ui/locales` (לא ייצוא שני מ־`feedback.js`). הקובץ ב־dist לא ממוזער.
 
 ---
 
@@ -105,7 +112,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 npm run build
 ```
 
-esbuild: `src/feedback.js` → `dist/feedback.js` (esm minify + sourcemap), `src/feedback.iife.js` → `dist/feedback.min.js` (iife minify + sourcemap), `src/feedback.css` → `dist/feedback.css` (minify), העתקת d.ts.
+esbuild: `src/feedback.js` → `dist/feedback.js` (esm minify + sourcemap), `src/feedback.iife.js` → `dist/feedback.min.js` (iife minify + sourcemap), `src/feedback.css` → `dist/feedback.css` (minify), העתקת d.ts + `feedback.locales.js` / `.d.ts` (בלי minify).
 
 אין Vitest/Playwright. אימות: `npm run build`, שרת סטטי משורש הריפו, דפדפן על `/demo/`. רשימת תרחישי חוזה: `docs/בדיקות.md`. אחרי שינוי בחוזה/תור/טוסט/escaping — לעבור על הרשימה, כולל LTR וערכת נושא בדמו.
 

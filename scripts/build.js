@@ -29,4 +29,6 @@ await Promise.all([
         outfile: 'dist/feedback.css',
     }),
     copyFile('src/feedback.d.ts', 'dist/feedback.d.ts'),
+    copyFile('src/feedback.locales.js', 'dist/feedback.locales.js'),
+    copyFile('src/feedback.locales.d.ts', 'dist/feedback.locales.d.ts'),
 ]);
