@@ -7,9 +7,12 @@
  * ```
  *
  * בלי bundler: `feedback.min.js` (IIFE) + `feedback.css`, ואז `window.Feedback`.
+ * ב־npm: `node_modules/feedback-ui/dist/feedback.min.js` + `feedback.css`.
+ * אין export בשם `feedback-ui/min`. אחרי `import` מ־ESM — אין גלובל ב־runtime
+ * (גם אם `Window.Feedback` מופיע בטיפוסים בגלל IIFE).
  *
  * כלים:
- * - `alert` — הודעה, כפתור אחד. תמיד `undefined`.
+ * - `alert` — הודעה, כפתור אחד. TS: `Promise<void>` (לא לקרוא את הערך). JS: תמיד `undefined`.
  * - `confirm` — כן/לא. תמיד `true` או `false` (X/Esc = `false`, לא `null`).
  * - `prompt` — שדה אחד. אישור = ערך; ביטול/X/Esc = `null`.
  * - `menu` — כמה כפתורי פעולה. אישור = `value` אם קיים המפתח, אחרת `undefined`; ביטול = `null`.
@@ -20,10 +23,14 @@
  *
  * התנהגות:
  * - דיאלוג אחד על המסך. קריאה נוספת נכנסת לתור.
+ * - לכל דיאלוג כפתור X. X ו־Esc = ערך הביטול של אותו סוג. אין `cancelBtn` ב־`alert`.
  * - לחיצה על הרקע (backdrop) לא סוגרת — רק אנימציית אזהרה.
+ * - אם `showModal` נכשל: ה־Promise נדחה ב־`Error('Feedback: failed to show dialog')`. אין resolve.
  * - כותרת, הודעה, תוויות וטוסט הם טקסט (`textContent`), לא HTML. `\n` בהודעת דיאלוג נשבר לשורה.
  * - `dir` מגיע מהמסמך. אין `className` ציבורי על דיאלוג.
  * - כפתור: מחרוזת (הטקסט) או `{ text, theme? }`. בלי theme / `theme: ''` → primary. ביטול בלי theme → secondary.
+ * - ברירות כותרת/כפתור כשחסר (עברית): alert `הודעה`/`אישור`; confirm `אישור נדרש`/`אישור`/`ביטול`;
+ *   prompt ו־form `הזנת נתונים`/`שמור`/`ביטול`; menu `בחר פעולה`/`ביטול`; selector `בחר אפשרות`/`ביטול`.
  */
 
 export type themeString = 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'error' | 'info' | 'outline' | '';
@@ -76,7 +83,10 @@ export type feedbackPrompt = {
     placeholder?: string
     confirmBtn?: feedbackBtn
     cancelBtn?: feedbackBtn
-    /** סוג `<input>`: text, password, number, email… `number` עובר coerce כמו שדה טופס */
+    /**
+     * סוג `<input>`: text, password, number, email…
+     * רק `'number'` משנה את ערך החזרה (אותו coerce כמו `feedbackField`). שאר הטיפוסים → מחרוזת.
+     */
     type?: string
     /** ולידציה נייטיבית של הטופס — Enter לא סוגר אם לא תקין */
     required?: boolean
@@ -91,6 +101,7 @@ export type feedbackSelector<T = any> = {
     title?: string
     message?: string
     cancelBtn?: feedbackBtn
+    /** סינון לפי `item.text` (substring, case-insensitive). לא לפי `value`. */
     searchable?: boolean
     searchPlaceholder?: string
     size?: feedbackSize
@@ -109,13 +120,16 @@ export type feedbackField = {
     /**
      * מפתח באובייקט התוצאה.
      * חייב `/^[A-Za-z_][A-Za-z0-9_-]*$/` — אחרת `throw`. לא עברית, לא רווחים.
+     * הבדיקה בבניית הטופס, לפני `showModal`. `throw` דוחה את ה־Promise של `form`
+     * (לא throw סינכרוני מ־`Feedback.form()` — `try` בלי `await` לא תופס).
      */
     name: string
     label: string
     /**
      * text (ברירת מחדל), number, email, textarea, select, checkbox…
-     * checkbox בתוצאה: תמיד `true` / `false`.
-     * number: ריק/`null` → `undefined`; מספר סופי → `number`; אחרת `undefined`.
+     * checkbox: `default` truthy → מסומן; בתוצאה תמיד `true` / `false` (גם בלי סימון).
+     * number: ריק/`null` → `undefined`; מספר סופי → `number`; אחרת (`NaN`/`Infinity`) → `undefined`.
+     * select בלי `default`: שורה ריקה נבחרת (לא האופציה הראשונה).
      * שאר הטיפוסים: מחרוזת (או `''`).
      */
     type?: string
@@ -135,9 +149,10 @@ export type feedbackToastHandle = {
 
 export type FeedbackObject = {
     /**
-     * הודעה עם כפתור אחד.
+     * הודעה עם כפתור אחד. אין `cancelBtn`.
      * מחרוזת = הודעה. אובייקט = כותרת / כפתור / size.
-     * אישור, X ו־Esc: `undefined`.
+     * TS: `Promise<void>` — לא לקרוא את הערך.
+     * JS: אישור, X, Esc ו־`closeAll` → `undefined`.
      */
     alert: {
         (message: string): Promise<void>
@@ -153,7 +168,9 @@ export type FeedbackObject = {
     }
     /**
      * שדה קלט אחד.
-     * אישור: `type: 'number'` ריק → `undefined`, מספר תקין → `number`, אחרת מחרוזת.
+     * אישור עם `type: 'number'` — אותו coerce כמו `feedbackField`:
+     * ריק/`null` → `undefined`; `Number` סופי → `number`; אחרת (`NaN`/`Infinity`) → `undefined`.
+     * שאר `type` → מחרוזת.
      * ביטול / X / Esc → `null`.
      */
     prompt: {
@@ -169,7 +186,7 @@ export type FeedbackObject = {
     menu: <T = any>(data: feedbackMenu<T>) => Promise<T | null | undefined>
     /**
      * כמה שדות. אישור → `{ [field.name]: ערך מתואם }`. ביטול / X / Esc → `null`.
-     * ראו `feedbackField` ל־checkbox / number / `name`.
+     * ראו `feedbackField` ל־checkbox / number / select / `name`.
      */
     form: (data: feedbackForm) => Promise<Record<string, any> | null>
     /**
@@ -179,13 +196,17 @@ export type FeedbackObject = {
     /**
      * סוגר את הדיאלוג הפתוח באנימציה (כמו X) ומרוקן את התור.
      * דיאלוג שטרם הוצג: `resolve` מיידי בערך הביטול, בלי `showModal`.
-     * לא Promise. לא נוגע בטוסטים.
+     * אם הסגירה כבר רצה (`close` idempotent) — הערך שנבחר נשאר; `closeAll` לא הופך אישור לביטול.
+     * חוזר מיד (לא Promise). דיאלוג חדש ייכנס לתור אחרי האנימציה של הפתוח.
+     * לא נוגע בטוסטים.
      */
     closeAll: () => void
     /**
-     * הודעות קצרות, לא חוסמות. לא Promise.
+     * הודעות קצרות, לא חוסמות. לא Promise. מיקום: תחתית-מרכז.
      * ברירת משך: success/info 3000, warning 3500, error 4000 (ms).
-     * עד 5 גלויים; עודף דוחה את הישן. מעבר עכבר או פוקוס עוצר את הטיימר.
+     * `duration === 0` סוגר מיד (לא «נשאר»).
+     * `icon` אופציונלי — תו (emoji), `textContent`, לא HTML.
+     * עד 5 גלויים; עודף דוחה את הגלוי הישן ביותר. מעבר עכבר או פוקוס עוצר את הטיימר.
      */
     toast: {
         success: (text: string, duration?: number, icon?: string) => feedbackToastHandle
@@ -201,7 +222,10 @@ export as namespace Feedback;
 
 declare global {
     interface Window {
-        /** קיים אחרי IIFE (`feedback.min.js`). אחרי `import` מ־ESM — אין גלובל. */
+        /**
+         * קיים ב־runtime רק אחרי IIFE (`feedback.min.js` / `dist/feedback.min.js`).
+         * אחרי `import { Feedback } from 'feedback-ui'` אין גלובל — להשתמש בייבוא, לא ב־`window.Feedback`.
+         */
         Feedback: FeedbackObject
     }
 }

@@ -19,7 +19,7 @@ import 'feedback-ui/style.css';
 await Feedback.alert('הפעולה הושלמה');
 ```
 
-בלי bundler — שני קבצים מ־`dist/`:
+בלי bundler — שני קבצים מ־`dist/` (ב־npm: `node_modules/feedback-ui/dist/`). אין export בשם `feedback-ui/min`. `window.Feedback` קיים רק אחרי ה־IIFE, לא אחרי `import` מ־ESM.
 
 ```html
 <link rel="stylesheet" href="./dist/feedback.css" />
@@ -43,16 +43,18 @@ python -m http.server 5502
 
 | מתודה | מתי | מה חוזר |
 |---|---|---|
-| `alert(message \| {…})` | הודעה עם כפתור אחד | `Promise<void>` |
+| `alert(message \| {…})` | הודעה עם כפתור אחד | `Promise<void>` — ב־JS תמיד `undefined`, לא לקרוא |
 | `confirm(message \| {…})` | כן / לא | `Promise<boolean>` — תמיד `true` או `false` |
 | `prompt(message \| {…})` | שדה קלט אחד | ערך באישור, `null` בביטול |
-| `menu({ buttons })` | כמה פעולות | `value` של הכפתור, `null` בביטול |
+| `menu({ buttons })` | כמה פעולות | `value` אם המפתח קיים, אחרת `undefined`; `null` בביטול |
 | `selector({ items })` | רשימה (אופציונלי חיפוש) | `value` של הפריט, `null` בביטול |
 | `form({ fields })` | כמה שדות | אובייקט לפי `name`, `null` בביטול |
 | `toast.success` / `info` / `warning` / `error` | הודעה קצרה בלי לחסום | `{ close() }` — לא Promise |
 | `closeAll()` | סגירת דיאלוג פתוח + ריקון התור | `void` — כל Promise נפתר כמו ביטול |
 
-דיאלוג אחד בלבד על המסך. קריאות נוספות נכנסות לתור ומופיעות אחרי שהקודם נסגר.
+דיאלוג אחד בלבד על המסך. קריאות נוספות נכנסות לתור ומופיעות אחרי שהקודם נסגר. לכל דיאלוג כפתור X; X ו־Esc = ביטול. לחיצה על הרקע לא סוגרת.
+
+אם `showModal` נכשל — ה־Promise נדחה (`Error('Feedback: failed to show dialog')`), לא resolve.
 
 `size: 'sm' | 'md' | 'lg'` על כל דיאלוג. בלי `size` = `md` (400px). `lg` לטופס רחב.
 
@@ -130,11 +132,15 @@ Feedback.closeAll();
 חשוב לבדוק לפי הטיפוס, לא לפי truthiness.
 
 - **confirm** — אישור → `true`. ביטול, X ו־Esc → `false`. אף פעם לא `null`.
-- **alert** — תמיד `undefined` (גם ב־X / Esc).
+- **alert** — TS: `void` (לא לקרוא). JS: תמיד `undefined` (גם ב־X / Esc).
 - **prompt / menu / selector / form** — ביטול, X ו־Esc → `null`.
-- **menu** — מחזיר גם `0`, `''`, `false` אם זה ה־`value`. בלי `value` על הכפתור → `undefined`.
-- **prompt / שדה `number`** — ריק באישור → `undefined`; מספר תקין → `number`.
+- **menu** — מחזיר גם `0`, `''`, `false` אם זה ה־`value`. בלי מפתח `value` על הכפתור → `undefined`.
+- **prompt / שדה `number`** — אותו coerce: ריק באישור → `undefined`; מספר סופי → `number`; `NaN` / `Infinity` → `undefined`.
 - **checkbox בטופס** — תמיד `true` / `false`.
+- **select בלי `default`** — שורה ריקה נבחרת, לא האופציה הראשונה.
+- **`form` עם `name` לא חוקי** — ה־Promise נדחה (לא throw סינכרוני). צריך `await` / `.catch`.
+- **`closeAll`** — אם הסגירה כבר רצה, הערך שנבחר נשאר (אישור לא נהפך לביטול). דיאלוג חדש מחכה לאנימציה.
+- **טוסט** — `icon` הוא תו (emoji), לא HTML. `duration: 0` סוגר מיד. מיקום: תחתית-מרכז.
 
 ---
 
@@ -156,7 +162,7 @@ Feedback.closeAll();
 ערכת נושא:
 
 - ברירת מחדל: `prefers-color-scheme`
-- כפייה: `data-fb-theme="dark"` או `"light"` על האלמנט עצמו או על אב
+- כפייה: `data-fb-theme="dark"` או `"light"` על `.fb-container` או על אב (`html` / `body`)
 
 ---
 
