@@ -153,7 +153,7 @@ document.getElementById('toasts').addEventListener('click', () => {
     Feedback.toast.info('טוען נתונים...');
     Feedback.toast.warning('חלק מהרשומות חסרות.');
     Feedback.toast.error('שגיאה בייבוא טבלה.');
-    Feedback.toast.info('עוד הודעה — מעבר למקס.');
+    Feedback.toast.info('הודעה ארוכה שצריכה להישבר לשורות כשמגיעים לרוחב המקסימלי של הטוסט, כולל מילה-ארוכה-מאוד-בלי-רווחים-כדי-לבדוק-overflow-wrap.');
     Feedback.toast.success('השישית דוחקת את הראשונה.');
 });
 
@@ -294,6 +294,16 @@ document.getElementById('size-sm').addEventListener('click', async () => {
     });
 });
 
+document.getElementById('backdrop-close').addEventListener('click', async () => {
+    const result = await Feedback.confirm({
+        title: 'סגירה ברקע',
+        message: 'לחיצה מלאה על הרקע (down ו-up שם) מבטלת. גרור מהקופסה החוצה ושחרר — לא ייסגר.',
+        closeOnBackdrop: true,
+    });
+    if (result) Feedback.toast.success('אושר.');
+    else Feedback.toast.info('בוטל (רקע / X / Esc).');
+});
+
 document.getElementById('size-lg').addEventListener('click', async () => {
     await Feedback.form({
         title: 'טופס רחב',
@@ -305,6 +315,19 @@ document.getElementById('size-lg').addEventListener('click', async () => {
         ],
         confirmBtn: 'סגור',
         cancelBtn: 'ביטול',
+    });
+});
+
+document.getElementById('dialog-vars').addEventListener('click', async () => {
+    await Feedback.alert({
+        title: 'משתני CSS לקריאה',
+        message: 'vars: --fb-dialog-max 32rem ו־--fb-primary ירוק. הדיאלוג הבא בלי vars חוזר לברירת המחדל.',
+        vars: { '--fb-dialog-max': '32rem', '--fb-primary': '#0f766e' },
+        btn: 'הבא: ברירת מחדל',
+    });
+    await Feedback.alert({
+        title: 'בלי vars',
+        message: 'רוחב md (~400px) וצבע כפתור רגיל. לא יורש מהקודם.',
     });
 });
 
@@ -415,6 +438,19 @@ document.getElementById('test-prompt-cancel').addEventListener('click', async ()
     report('prompt', value);
 });
 
+document.getElementById('test-vars').addEventListener('click', async () => {
+    await Feedback.alert({
+        title: 'vars',
+        message: 'רחב מ־md, צר מ־lg. כפתור בצבע --fb-primary מהקריאה.',
+        vars: { '--fb-dialog-max': '32rem', '--fb-primary': '#0f766e' },
+        btn: 'הבא: בלי vars',
+    });
+    await Feedback.alert({
+        title: 'בלי vars',
+        message: 'חזרה לרוחב ולצבע ברירת מחדל.',
+    });
+});
+
 document.getElementById('test-size').addEventListener('click', async () => {
     await Feedback.alert({
         title: 'sm',
@@ -440,4 +476,23 @@ document.getElementById('test-close-all').addEventListener('click', () => {
     Feedback.confirm('שני בתור').then((v) => report('closeAll-2', v));
     Feedback.prompt('שלישי בתור').then((v) => report('closeAll-3', v));
     setTimeout(() => Feedback.closeAll(), 400);
+});
+
+document.getElementById('test-backdrop-close').addEventListener('click', async () => {
+    const result = await Feedback.confirm({
+        title: 'סגירה ברקע',
+        message: 'לחיצה מלאה על הרקע (down ו-up שם) = ביטול. גרור מהקופסה החוצה ושחרר — לא ייסגר.',
+        closeOnBackdrop: true,
+    });
+    report('backdrop-confirm', result);
+});
+
+const toastPositions = ['top-start', 'top-center', 'top-end', 'bottom-start', 'bottom-center', 'bottom-end'];
+document.getElementById('toast-position').addEventListener('click', () => {
+    document.querySelectorAll('#fb-toast-container .fb-toast-slot').forEach((el) => el.remove());
+    const current = Feedback.getToastPosition();
+    const i = toastPositions.indexOf(current);
+    const next = toastPositions[(i + 1) % toastPositions.length];
+    Feedback.setToastPosition(next);
+    Feedback.toast.info(`מיקום: ${next}`);
 });

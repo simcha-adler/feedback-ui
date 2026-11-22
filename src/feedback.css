@@ -476,13 +476,10 @@ textarea.fb-form-input {
 
 .fb-toast-container {
     position: fixed;
-    inset: unset;
-    inset-block-end: 1.5rem;
-    left: 50%;
-    translate: -50% 0;
+    /* auto — לא left/right. left:auto על פינה דורס inset-inline-end (ב-LTR זה right). */
+    inset: auto;
     display: flex;
-    flex-direction: column-reverse;
-    gap: 0.75rem;
+    flex-direction: column;
     z-index: var(--fb-z-index);
     pointer-events: none;
     align-items: stretch;
@@ -495,6 +492,61 @@ textarea.fb-form-input {
     background: transparent;
     overflow: visible;
     color: inherit;
+    --fb-toast-in-duration: calc(var(--fb-duration) * 2.5);
+    --fb-toast-from-x: 0px;
+    --fb-toast-from-y: 1.25rem;
+    --fb-toast-inline-start: -1;
+    --fb-toast-inline-end: 1;
+
+    &:dir(rtl) {
+        --fb-toast-inline-start: 1;
+        --fb-toast-inline-end: -1;
+    }
+
+    &.fb-toast-pos-bottom-center {
+        inset-block-end: 1.5rem;
+        left: 50%;
+        translate: -50% 0;
+        --fb-toast-from-x: 0px;
+        --fb-toast-from-y: 1.25rem;
+    }
+
+    &.fb-toast-pos-bottom-start {
+        inset-block-end: 1.5rem;
+        inset-inline-start: 1.5rem;
+        --fb-toast-from-x: calc(2rem * var(--fb-toast-inline-start));
+        --fb-toast-from-y: 0px;
+    }
+
+    &.fb-toast-pos-bottom-end {
+        inset-block-end: 1.5rem;
+        inset-inline-end: 1.5rem;
+        --fb-toast-from-x: calc(2rem * var(--fb-toast-inline-end));
+        --fb-toast-from-y: 0px;
+    }
+
+    &.fb-toast-pos-top-center {
+        inset-block-start: 1.5rem;
+        left: 50%;
+        translate: -50% 0;
+        --fb-toast-from-x: 0px;
+        --fb-toast-from-y: -1.25rem;
+    }
+
+    &.fb-toast-pos-top-start {
+        inset-block-start: 1.5rem;
+        inset-inline-start: 1.5rem;
+        --fb-toast-from-x: calc(2rem * var(--fb-toast-inline-start));
+        --fb-toast-from-y: 0px;
+    }
+
+    &.fb-toast-pos-top-end {
+        inset-block-start: 1.5rem;
+        inset-inline-end: 1.5rem;
+        --fb-toast-from-x: calc(2rem * var(--fb-toast-inline-end));
+        --fb-toast-from-y: 0px;
+    }
+
 }
 
 .fb-dialog .fb-toast-container {
@@ -502,10 +554,41 @@ textarea.fb-form-input {
     display: flex !important;
 }
 
+.fb-toast-slot {
+    display: grid;
+    grid-template-rows: 1fr;
+    min-width: 0;
+    transition: grid-template-rows var(--fb-duration) ease;
+
+    & + & {
+        margin-block-start: 0.75rem;
+        transition: margin-block-start var(--fb-duration) ease;
+    }
+
+    &.fb-closing {
+        grid-template-rows: 0fr;
+
+        & + .fb-toast-slot {
+            margin-block-start: 0;
+        }
+
+        .fb-toast-slot-inner {
+            overflow: hidden;
+        }
+    }
+}
+
+.fb-toast-slot-inner {
+    min-height: 0;
+    min-width: 0;
+}
+
 .fb-toast {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    max-width: 100%;
+    min-width: 0;
     padding: 0.75rem 1.25rem;
     border: none;
     border-radius: var(--fb-radius);
@@ -518,11 +601,11 @@ textarea.fb-form-input {
     overflow-wrap: anywhere;
 
     &.fb-toast-enter {
-        animation: fb-toast-in var(--fb-duration) ease forwards;
+        animation: fb-toast-in var(--fb-toast-in-duration) ease-out forwards;
     }
 
     &.fb-closing {
-        animation: fb-toast-out var(--fb-duration) ease forwards;
+        animation: fb-toast-out var(--fb-duration) ease-in forwards;
     }
 }
 
@@ -547,28 +630,35 @@ textarea.fb-form-input {
 }
 
 .fb-toast-icon {
+    flex-shrink: 0;
     font-size: 1.125rem;
     line-height: 1;
 }
 
 .fb-toast-text {
+    flex: 1;
     min-width: 0;
     overflow-wrap: anywhere;
+    line-height: 1.25;
 }
 
 .fb-toast-close {
     appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
     margin-inline-start: auto;
     flex-shrink: 0;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.125rem;
+    height: 1.125rem;
     padding: 0;
     border: none;
     border-radius: var(--fb-radius);
     background: transparent;
     color: inherit;
     font: inherit;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     line-height: 1;
     cursor: pointer;
     opacity: 0.8;
@@ -655,21 +745,23 @@ textarea.fb-form-input {
 @keyframes fb-toast-in {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        translate: var(--fb-toast-from-x) var(--fb-toast-from-y);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
+        translate: 0 0;
     }
 }
 
 @keyframes fb-toast-out {
     from {
         opacity: 1;
+        translate: 0 0;
     }
 
     to {
         opacity: 0;
+        translate: calc(var(--fb-toast-from-x) * 0.35) calc(var(--fb-toast-from-y) * 0.35);
     }
 }

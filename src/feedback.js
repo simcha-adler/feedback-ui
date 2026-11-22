@@ -13,6 +13,7 @@ import { FeedbackLocales } from './feedback.locales.js';
  * @typedef {import('./feedback.d.ts').FeedbackObject} FeedbackObject
  * @typedef {import('./feedback.d.ts').feedbackLocale} feedbackLocale
  * @typedef {import('./feedback.d.ts').feedbackLocaleId} feedbackLocaleId
+ * @typedef {import('./feedback.d.ts').feedbackToastPosition} feedbackToastPosition
  */
 
 /** @type {feedbackLocale} */
@@ -40,6 +41,32 @@ function setLocale(locale) {
 /** @returns {feedbackLocale} */
 function getLocale() {
     return { ...fbStrings };
+}
+
+/** @type {readonly feedbackToastPosition[]} */
+const TOAST_POSITIONS = [
+    'top-start', 'top-center', 'top-end',
+    'bottom-start', 'bottom-center', 'bottom-end',
+];
+
+/** @type {feedbackToastPosition} */
+let toastPosition = 'bottom-center';
+
+/**
+ * @param {feedbackToastPosition} position
+ */
+function setToastPosition(position) {
+    if (!TOAST_POSITIONS.includes(position)) {
+        throw new Error('Feedback: invalid toast position');
+    }
+    toastPosition = position;
+    const container = document.getElementById(TOAST_CONTAINER_ID);
+    if (container) ToastManager.applyPosition(container);
+}
+
+/** @returns {feedbackToastPosition} */
+function getToastPosition() {
+    return toastPosition;
 }
 
 
@@ -243,16 +270,43 @@ const DialogManager = {
     },
 
     /**
+     * @param {unknown} vars
+     * @returns {[string, string][]}
+     */
+    normalizeDialogVars(vars) {
+        if (vars == null) return [];
+        if (typeof vars !== 'object' || Array.isArray(vars)) {
+            throw new Error('Feedback: invalid dialog vars');
+        }
+        /** @type {[string, string][]} */
+        const out = [];
+        for (const [key, value] of Object.entries(vars)) {
+            if (!/^--[A-Za-z_][A-Za-z0-9_-]*$/.test(key)) {
+                throw new Error('Feedback: invalid CSS variable');
+            }
+            if (value == null) continue;
+            if (typeof value !== 'string' && typeof value !== 'number') {
+                throw new Error('Feedback: invalid CSS variable');
+            }
+            out.push([key, String(value)]);
+        }
+        return out;
+    },
+
+    /**
      * פונקציית תשתית ליצירת הדיאלוג מבוססת תגית <dialog>
     */
     createDialog(options) {
         const { title, message, buildContent, onRender, role = 'dialog', size } = options;
         const dismissValue = Object.hasOwn(options, 'dismissValue') ? options.dismissValue : null;
+        const closeOnBackdrop = options.closeOnBackdrop === true;
+        const cssVars = DialogManager.normalizeDialogVars(options.vars);
 
         return new Promise((resolve, reject) => {
             const dialog = /** @type {FbDialog} */ (document.createElement('dialog'));
             dialog.className = 'fb-container fb-dialog fb-opening';
             if (size === 'sm' || size === 'lg') dialog.classList.add(`fb-dialog-${size}`);
+            for (const [key, value] of cssVars) dialog.style.setProperty(key, value);
             dialog.setAttribute('role', role);
             if (title) dialog.setAttribute('aria-labelledby', 'fb-dialog-title');
             if (message) dialog.setAttribute('aria-describedby', 'fb-dialog-message');
@@ -317,14 +371,25 @@ const DialogManager = {
             // סגירה בלחיצה על כפתור ה-X
             fbQ(dialog, 'button', '.fb-dialog-close').onclick = () => close(dismissValue);
 
-            // איתות בלחיצה על הרקע החיצוני
-            dialog.addEventListener('click', (e) => {
-                // אם הלחיצה באלמנט הדיאלוג ולא בתוכן שלו (שזה בעצם ה-backdrop)
-                if (e.target === dialog) {
-                    dialog.classList.remove('fb-opening', 'fb-note');
-                    void dialog.offsetWidth; // מכריח את הדפדפן לשים לב להסרת הקלאס כדי שיפעיל בכל פעם את האנימציה מחדש.
-                    dialog.classList.add('fb-note');
+            // סגירה / אזהרה רק אם press ו-release שניהם על ה-backdrop (לא גרירה מהקופסה החוצה).
+            let backdropPress = false;
+            dialog.addEventListener('pointerdown', (e) => {
+                backdropPress = e.button === 0 && e.target === dialog;
+            });
+            dialog.addEventListener('pointerup', (e) => {
+                const startedOnBackdrop = backdropPress;
+                backdropPress = false;
+                if (!startedOnBackdrop || e.button !== 0 || e.target !== dialog) return;
+                if (closeOnBackdrop) {
+                    close(dismissValue);
+                    return;
                 }
+                dialog.classList.remove('fb-opening', 'fb-note');
+                void dialog.offsetWidth;
+                dialog.classList.add('fb-note');
+            });
+            dialog.addEventListener('pointercancel', () => {
+                backdropPress = false;
             });
 
             dialog.querySelector('.fb-dialog-box').addEventListener('animationend', (e) => {
@@ -352,10 +417,10 @@ const DialogManager = {
     },
 
     // הודעת אישור (Alert) פשוטה
-    alert({ message, title = fbStrings.alertTitle, btn = fbStrings.ok, size }) {
+    alert({ message, title = fbStrings.alertTitle, btn = fbStrings.ok, size, closeOnBackdrop, vars }) {
         btn = DialogManager.convertBtn(btn);
         return DialogManager.createDialog({
-            title, message, size, dismissValue: undefined, role: 'alertdialog',
+            title, message, size, closeOnBackdrop, vars, dismissValue: undefined, role: 'alertdialog',
             buildContent(root) {
                 root.append(fbEl('div', { className: 'fb-dialog-footer' }, [
                     fbEl('button', {
@@ -373,12 +438,12 @@ const DialogManager = {
     },
 
     //אישור או ביטול פעולה
-    confirm({ message, title = fbStrings.confirmTitle, confirmBtn, cancelBtn, size }) {
+    confirm({ message, title = fbStrings.confirmTitle, confirmBtn, cancelBtn, size, closeOnBackdrop, vars }) {
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
         return DialogManager.createDialog({
-            title, message, size, dismissValue: false, role: 'alertdialog',
+            title, message, size, closeOnBackdrop, vars, dismissValue: false, role: 'alertdialog',
             buildContent(root) {
                 root.append(fbEl('div', { className: 'fb-dialog-buttons' }, [
                     fbEl('button', {
@@ -404,11 +469,11 @@ const DialogManager = {
     },
 
     // אישור פעולה עם אפשרויות מרובות או תפריט פעולות
-    menu({ message, title = fbStrings.menuTitle, buttons, cancelBtn = fbStrings.cancel, size }) {
+    menu({ message, title = fbStrings.menuTitle, buttons, cancelBtn = fbStrings.cancel, size, closeOnBackdrop, vars }) {
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
         return DialogManager.createDialog({
-            title, message, size,
+            title, message, size, closeOnBackdrop, vars,
             buildContent(root) {
                 buttons.forEach((btn, index) => {
                     root.append(fbEl('button', {
@@ -444,13 +509,13 @@ const DialogManager = {
     },
 
     // בקשת קלט (Prompt)
-    prompt({ message, title = fbStrings.inputTitle, defaultText = '', placeholder = fbStrings.promptPlaceholder, confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, type = 'text', required = false, min, max, step, size }) {
+    prompt({ message, title = fbStrings.inputTitle, defaultText = '', placeholder = fbStrings.promptPlaceholder, confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, type = 'text', required = false, min, max, step, size, closeOnBackdrop, vars }) {
 
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
         return DialogManager.createDialog({
-            title, message, size,
+            title, message, size, closeOnBackdrop, vars,
             buildContent(root) {
                 const input = fbEl('input', {
                     type,
@@ -495,7 +560,7 @@ const DialogManager = {
 
     // חלון בחירה מתוך רשימה נגללת (Selector)
     selector({ items = [], title = fbStrings.selectorTitle, message = '', cancelBtn = fbStrings.cancel,
-        searchable = false, searchPlaceholder = fbStrings.selectorSearch, size }) {
+        searchable = false, searchPlaceholder = fbStrings.selectorSearch, size, closeOnBackdrop, vars }) {
 
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
@@ -503,6 +568,8 @@ const DialogManager = {
             title,
             message,
             size,
+            closeOnBackdrop,
+            vars,
             buildContent(root) {
                 if (searchable) {
                     root.append(fbEl('div', { className: 'fb-dialog-selector-search-wrapper' }, [
@@ -607,7 +674,7 @@ const DialogManager = {
         });
     },
 
-    form({ title = fbStrings.inputTitle, message = '', fields = [], confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, size }) {
+    form({ title = fbStrings.inputTitle, message = '', fields = [], confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, size, closeOnBackdrop, vars }) {
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
@@ -615,6 +682,8 @@ const DialogManager = {
             title,
             message,
             size,
+            closeOnBackdrop,
+            vars,
             buildContent(root) {
                 const formEl = fbEl('form', { id: 'fb-dynamic-form' });
                 fields.forEach((field, index) => {
@@ -740,6 +809,13 @@ const TOAST_CONTAINER_ID = 'fb-toast-container';
 const ToastManager = {
 
     // מחזירה את הקונטיינר של הטואסטים, ואם לא קיים - יוצרת אותו
+    applyPosition(container) {
+        for (const pos of TOAST_POSITIONS) {
+            container.classList.remove(`fb-toast-pos-${pos}`);
+        }
+        container.classList.add(`fb-toast-pos-${toastPosition}`);
+    },
+
     getContainer() {
         let container = document.getElementById(TOAST_CONTAINER_ID);
         if (!container) {
@@ -753,6 +829,7 @@ const ToastManager = {
             );
             document.body.appendChild(container);
         }
+        this.applyPosition(container);
         return container;
     },
 
@@ -799,8 +876,9 @@ const ToastManager = {
     show(text, type, icon, duration = 3000) {
         const container = ToastManager.getContainer();
         const visible = [...container.querySelectorAll('div.fb-toast:not(.fb-closing)')];
+        const fromTop = toastPosition.startsWith('top-');
         while (visible.length >= TOAST_MAX) {
-            const oldest = /** @type {FbToast | undefined} */ (visible.shift());
+            const oldest = /** @type {FbToast | undefined} */ (fromTop ? visible.pop() : visible.shift());
             oldest?._fbDismiss?.();
         }
 
@@ -818,6 +896,9 @@ const ToastManager = {
             toast.classList.remove('fb-toast-enter');
         });
 
+        const inner = fbEl('div', { className: 'fb-toast-slot-inner' }, [toast]);
+        const slot = fbEl('div', { className: 'fb-toast-slot' }, [inner]);
+
         let remaining = duration;
         let startedAt = Date.now();
         /** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -828,7 +909,7 @@ const ToastManager = {
         let paused = false;
 
         const removeEl = () => {
-            toast.remove();
+            slot.remove();
             if (!container.querySelector('.fb-toast') && container.matches(':popover-open')) {
                 container.hidePopover();
             }
@@ -838,8 +919,9 @@ const ToastManager = {
             if (closed) return;
             closed = true;
             clearTimeout(timeoutId);
+            slot.classList.add('fb-closing');
             toast.classList.add('fb-closing');
-            setTimeout(removeEl, DialogManager.durationMs(container));
+            setTimeout(removeEl, DialogManager.durationMs(toast));
         };
 
         const schedule = () => {
@@ -871,7 +953,28 @@ const ToastManager = {
             syncTimer();
         });
 
-        container.appendChild(toast);
+        const others = [...container.querySelectorAll('.fb-toast-slot')];
+        const before = others.map((el) => el.getBoundingClientRect());
+        if (fromTop) {
+            const firstSlot = others[0];
+            if (firstSlot) container.insertBefore(slot, firstSlot);
+            else container.appendChild(slot);
+        } else {
+            container.appendChild(slot);
+        }
+
+        const inMs = DialogManager.durationMs(container) * 2.5;
+        if (inMs > 0) {
+            others.forEach((el, i) => {
+                const dy = before[i].top - el.getBoundingClientRect().top;
+                if (!dy) return;
+                el.animate(
+                    [{ transform: `translateY(${dy}px)` }, { transform: 'none' }],
+                    { duration: inMs, easing: 'ease-out' },
+                );
+            });
+        }
+
         ToastManager.promote();
         ToastManager.announce(text, type);
         schedule();
@@ -921,6 +1024,8 @@ export const Feedback = {
     closeAll: () => DialogQueue.closeAll(),
     setLocale,
     getLocale,
+    setToastPosition,
+    getToastPosition,
     toast: {
         success: ToastManager.success,
         info: ToastManager.info,

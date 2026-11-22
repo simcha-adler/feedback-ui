@@ -24,14 +24,17 @@
  * - `toast.success` / `info` / `warning` / `error` — לא חוסם, לא Promise. מחזיר `{ close() }`.
  * - `closeAll` — `void`. סוגר דיאלוג פתוח + תור. טוסטים לא נגעים.
  * - `setLocale` / `getLocale` — מילון ברירות מחדל (`he` כברירת מחדל). שפה אחרת = אובייקט `feedbackLocale`.
+ * - `setToastPosition` / `getToastPosition` — מיקום קונטיינר הטוסטים. ברירת מחדל `bottom-center`.
  *
  * התנהגות:
  * - דיאלוג אחד על המסך. קריאה נוספת נכנסת לתור.
  * - לכל דיאלוג כפתור X. X ו־Esc = ערך הביטול של אותו סוג. אין `cancelBtn` ב־`alert`.
- * - לחיצה על הרקע (backdrop) לא סוגרת — רק אנימציית אזהרה.
+ * - לחיצה על הרקע (backdrop) לא סוגרת כברירת מחדל — רק אנימציית אזהרה.
+ *   `closeOnBackdrop: true` על אובייקט הקריאה: סגירה בערך הביטול, רק אם pointerdown ו־pointerup שניהם על הרקע (לא גרירה מהקופסה החוצה). מחרוזת ל־alert/confirm/prompt לא מפעילה את זה.
  * - אם `showModal` נכשל: ה־Promise נדחה ב־`Error('Feedback: failed to show dialog')`. אין resolve.
  * - כותרת, הודעה, תוויות וטוסט הם טקסט (`textContent`), לא HTML. `\n` בהודעת דיאלוג נשבר לשורה.
  * - `dir` מגיע מהמסמך. אין `className` ציבורי על דיאלוג.
+ * - `vars` על אובייקט דיאלוג: משתני CSS למופע הזה בלבד. ראו `feedbackDialogVars`.
  * - כפתור: מחרוזת (הטקסט) או `{ text, theme? }`. בלי theme / `theme: ''` → primary. ביטול בלי theme → secondary.
  * - ברירות כותרת/כפתור/aria כשחסר — מ־`Feedback.getLocale()`. ברירת מחדל `he`.
  *   `setLocale('en' | 'he')` או `setLocale({ ok: 'OK', … })`. מפתח חסר באובייקט נופל ל־he.
@@ -74,6 +77,31 @@ export type feedbackLocale = {
 /** חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. sm ≈ 20rem, lg ≈ 40rem */
 export type feedbackSize = 'sm' | 'md' | 'lg'
 
+/**
+ * משתני CSS על ה־`<dialog>` של הקריאה הזו בלבד (`style.setProperty`).
+ * מתים עם האלמנט — הדיאלוג הבא בתור לא יורש אותם.
+ * מפתח חייב `/^--[A-Za-z_][A-Za-z0-9_-]*$/` (למשל `--fb-dialog-max`, `--fb-primary`).
+ * ערך: מחרוזת או מספר (הופך למחרוזת). `null`/`undefined` על מפתח — דילוג.
+ * מפתח לא תקין או ערך שאינו מחרוזת/מספר → throw סינכרוני `Error('Feedback: invalid CSS variable')`.
+ * `vars` לא אובייקט (מערך, מחרוזת, …) → `Error('Feedback: invalid dialog vars')`.
+ * חסר / `null` / `{}` — אין שינוי.
+ * inline דורס `size` לאותו טוקן (`--fb-dialog-max` ב־`vars` מנצח את `sm`/`lg`).
+ * לא על טוסטים. מחרוזת ל־alert/confirm/prompt לא מעבירה `vars`.
+ */
+export type feedbackDialogVars = Record<string, string | number>
+
+/**
+ * מיקום קונטיינר הטוסטים. `start`/`end` לפי `dir` של המסמך (logical).
+ * ברירת מחדל של הספרייה: `bottom-center`.
+ */
+export type feedbackToastPosition =
+    | 'top-start'
+    | 'top-center'
+    | 'top-end'
+    | 'bottom-start'
+    | 'bottom-center'
+    | 'bottom-end'
+
 /** מחרוזת = טקסט הכפתור. או `{ text, theme? }`. */
 export type feedbackBtn = { text: string, theme?: themeString } | string
 
@@ -94,6 +122,12 @@ export type feedbackAlert = {
     title?: string
     btn?: feedbackBtn
     size?: feedbackSize
+    vars?: feedbackDialogVars
+    /**
+     * חסר / `false` — לחיצה על הרקע לא סוגרת (אנימציית אזהרה בלבד).
+     * `true` — סגירה כמו X/Esc (`undefined` ב-alert). רק אם press ו-release שניהם על הרקע.
+     */
+    closeOnBackdrop?: boolean
 }
 
 export type feedbackConfirm = {
@@ -102,6 +136,12 @@ export type feedbackConfirm = {
     confirmBtn?: feedbackBtn
     cancelBtn?: feedbackBtn
     size?: feedbackSize
+    vars?: feedbackDialogVars
+    /**
+     * חסר / `false` — הרקע לא סוגר.
+     * `true` — סגירה כמו X/Esc (`false`, לא `null`). רק press+release על הרקע.
+     */
+    closeOnBackdrop?: boolean
 }
 
 export type feedbackMenu<T = any> = {
@@ -110,6 +150,12 @@ export type feedbackMenu<T = any> = {
     buttons: feedbackOption<T>[]
     cancelBtn?: feedbackBtn
     size?: feedbackSize
+    vars?: feedbackDialogVars
+    /**
+     * חסר / `false` — הרקע לא סוגר.
+     * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
+     */
+    closeOnBackdrop?: boolean
 }
 
 export type feedbackPrompt = {
@@ -130,6 +176,12 @@ export type feedbackPrompt = {
     max?: string | number
     step?: string | number
     size?: feedbackSize
+    vars?: feedbackDialogVars
+    /**
+     * חסר / `false` — הרקע לא סוגר.
+     * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
+     */
+    closeOnBackdrop?: boolean
 }
 
 export type feedbackSelector<T = any> = {
@@ -141,6 +193,12 @@ export type feedbackSelector<T = any> = {
     searchable?: boolean
     searchPlaceholder?: string
     size?: feedbackSize
+    vars?: feedbackDialogVars
+    /**
+     * חסר / `false` — הרקע לא סוגר.
+     * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
+     */
+    closeOnBackdrop?: boolean
 }
 
 export type feedbackForm = {
@@ -150,6 +208,12 @@ export type feedbackForm = {
     confirmBtn?: feedbackBtn
     cancelBtn?: feedbackBtn
     size?: feedbackSize
+    vars?: feedbackDialogVars
+    /**
+     * חסר / `false` — הרקע לא סוגר.
+     * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
+     */
+    closeOnBackdrop?: boolean
 }
 
 export type feedbackField = {
@@ -186,7 +250,7 @@ export type feedbackToastHandle = {
 export type FeedbackObject = {
     /**
      * הודעה עם כפתור אחד. אין `cancelBtn`.
-     * מחרוזת = הודעה. אובייקט = כותרת / כפתור / size.
+     * מחרוזת = הודעה. אובייקט = כותרת / כפתור / size / vars.
      * TS: `Promise<void>` — לא לקרוא את הערך.
      * JS: אישור, X, Esc ו־`closeAll` → `undefined`.
      */
@@ -247,11 +311,22 @@ export type FeedbackObject = {
     /** עותק של המילון הפעיל. שינוי העותק לא משפיע על הספרייה. */
     getLocale: () => feedbackLocale
     /**
-     * הודעות קצרות, לא חוסמות. לא Promise. מיקום: תחתית-מרכז.
+     * מיקום קונטיינר הטוסטים. חל מיד על קונטיינר קיים ועל טוסטים חדשים. לא על דיאלוגים.
+     * `start` / `end` לפי `dir` של המסמך. ברירת מחדל `bottom-center`.
+     * ערך לא מוכר → `throw Error('Feedback: invalid toast position')`.
+     * לא יוצר קונטיינר אם עוד אין טוסטים.
+     */
+    setToastPosition: (position: feedbackToastPosition) => void
+    /** המיקום הפעיל. ברירת מחדל לפני קריאה: `bottom-center`. */
+    getToastPosition: () => feedbackToastPosition
+    /**
+     * הודעות קצרות, לא חוסמות. לא Promise. מיקום: `getToastPosition()` (ברירת מחדל תחתית-מרכז).
      * ברירת משך: success/info 3000, warning 3500, error 4000 (ms).
      * `duration === 0` סוגר מיד (לא «נשאר»).
      * `icon` אופציונלי — תו (emoji), `textContent`, לא HTML.
-     * עד 5 גלויים; עודף דוחה את הגלוי הישן ביותר. מעבר עכבר או פוקוס עוצר את הטיימר.
+     * עד 5 גלויים; עודף דוחה את הגלוי הישן ביותר. חדש על הקצה (למעלה-עליון / למטה-תחתון).
+     * טקסט נשבר לשורות ברוחב המקסימלי (`min(24rem, 100vw - 2rem)`).
+     * מעבר עכבר או פוקוס עוצר את הטיימר.
      */
     toast: {
         success: (text: string, duration?: number, icon?: string) => feedbackToastHandle

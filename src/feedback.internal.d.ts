@@ -8,6 +8,7 @@ import type {
     feedbackMenu,
     feedbackPrompt,
     feedbackSelector,
+    feedbackDialogVars,
     feedbackSize,
     feedbackToastHandle,
     themeString,
@@ -25,6 +26,8 @@ export type feedbackDialog = {
     dismissValue?: boolean | null | undefined
     role?: 'dialog' | 'alertdialog'
     size?: feedbackSize
+    closeOnBackdrop?: boolean
+    vars?: feedbackDialogVars
 }
 
 export type FbDialog = HTMLDialogElement & {
@@ -39,6 +42,7 @@ export type FbToast = HTMLDivElement & {
 }
 
 export type toast = {
+    applyPosition: (container: HTMLElement) => void
     getContainer: () => HTMLElement
     announce: (text: string, type: string) => void
     promote: () => void
@@ -63,6 +67,7 @@ export type dialogManager = {
     coerceFieldValue: (field: Pick<feedbackField, 'type'>, raw: FormDataEntryValue | null) => any
     fieldName: (name: string) => string
     applyInputLimits: (control: HTMLElement, field: Pick<feedbackField, 'min' | 'max' | 'step'>) => void
+    normalizeDialogVars: (vars?: unknown) => [string, string][]
     createDialog: (data: feedbackDialog) => Promise<any | void | null>
     alert: (data: feedbackAlert) => Promise<void>
     confirm: (data: feedbackConfirm) => Promise<boolean>

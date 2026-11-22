@@ -56,12 +56,15 @@ python -m http.server 5502
 | `toast.success` / `info` / `warning` / `error` | הודעה קצרה בלי לחסום | `{ close() }` — לא Promise |
 | `closeAll()` | סגירת דיאלוג פתוח + ריקון התור | `void` — כל Promise נפתר כמו ביטול |
 | `setLocale` / `getLocale` | מילון טקסטים מובנים | `void` / עותק המילון. ברירת מחדל עברית |
+| `setToastPosition` / `getToastPosition` | מיקום הטוסטים | `void` / המיקום. ברירת מחדל `bottom-center` |
 
-דיאלוג אחד בלבד על המסך. קריאות נוספות נכנסות לתור ומופיעות אחרי שהקודם נסגר. לכל דיאלוג כפתור X; X ו־Esc = ביטול. לחיצה על הרקע לא סוגרת.
+דיאלוג אחד בלבד על המסך. קריאות נוספות נכנסות לתור ומופיעות אחרי שהקודם נסגר. לכל דיאלוג כפתור X; X ו־Esc = ביטול. לחיצה על הרקע **לא** סוגרת, אלא אם העברת `closeOnBackdrop: true` באובייקט הקריאה. אז נסגר רק אם ה־press וה־release היו שניהם על הרקע (לא גרירה מהקופסה החוצה), וחוזר אותו ערך ביטול כמו X.
 
 אם `showModal` נכשל — ה־Promise נדחה (`Error('Feedback: failed to show dialog')`), לא resolve.
 
 `size: 'sm' | 'md' | 'lg'` על כל דיאלוג. בלי `size` = `md` (400px). `lg` לטופס רחב.
+
+`vars` על אובייקט דיאלוג — משתני CSS למופע הזה בלבד (לא לטוסטים, לא לקריאה הבאה). מחרוזת ל־alert/confirm/prompt לא מעבירה `vars`.
 
 טוסטים לא נחסמים: עד 5 גלויים, מעבר עכבר או פוקוס עוצר את הטיימר, והם נשארים מעל דיאלוג פתוח.
 
@@ -122,7 +125,29 @@ Feedback.toast.error('נכשל', 4000);
 const t = Feedback.toast.info('טוען…');
 t.close();
 
+Feedback.setToastPosition('bottom-end');
+Feedback.getToastPosition(); // 'bottom-end'
+
 Feedback.closeAll();
+```
+
+`closeOnBackdrop` רק באובייקט, לא במחרוזת:
+
+```js
+await Feedback.confirm({
+  message: 'למחוק?',
+  closeOnBackdrop: true, // X / Esc / רקע מלא → false
+});
+```
+
+`vars` — טוקנים לדיאלוג הזה. אחרי סגירה הדיאלוג הבא חוזר לברירת המחדל:
+
+```js
+await Feedback.form({
+  title: 'חשבונית',
+  vars: { '--fb-dialog-max': '45rem', '--fb-primary': '#0f766e' },
+  fields: [{ name: 'id', label: 'מספר' }],
+});
 ```
 
 כפתור יכול להיות מחרוזת (`'אישור'`) או `{ text, theme }`.  
@@ -219,7 +244,9 @@ Feedback.setLocale({
 - **select בלי `default`** — שורה ריקה נבחרת, לא האופציה הראשונה.
 - **`form` עם `name` לא חוקי** — ה־Promise נדחה (לא throw סינכרוני). צריך `await` / `.catch`.
 - **`closeAll`** — אם הסגירה כבר רצה, הערך שנבחר נשאר (אישור לא נהפך לביטול). דיאלוג חדש מחכה לאנימציה.
-- **טוסט** — `icon` הוא תו (emoji), לא HTML. `duration: 0` סוגר מיד. מיקום: תחתית-מרכז.
+- **טוסט** — `icon` הוא תו (emoji), לא HTML. `duration: 0` סוגר מיד. מיקום: `Feedback.setToastPosition('top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end')`. `start`/`end` לפי `dir`. ערך לא מוכר → `Error('Feedback: invalid toast position')`.
+- **`closeOnBackdrop`** — אופציונלי. ברירת מחדל לא סוגר. עם `true`: ערך הביטול של אותו סוג דיאלוג.
+- **`vars`** — אופציונלי. מפתחות `--שם` (כמו `--fb-dialog-max`). throw סינכרוני אם המפתח לא תקין (`Error('Feedback: invalid CSS variable')`) או אם `vars` לא אובייקט (`Error('Feedback: invalid dialog vars')`). דורס `size` לאותו טוקן. לא דולף לדיאלוג הבא.
 
 ---
 
@@ -237,6 +264,8 @@ Feedback.setLocale({
   --fb-dialog-max: 400px;
 }
 ```
+
+דריסה ב־CSS של האפליקציה על `.fb-container` חלה על **כל** דיאלוג וטוסט. לקריאה אחת — `vars` באובייקט הדיאלוג, לא גיליון גלובלי.
 
 ערכת נושא:
 

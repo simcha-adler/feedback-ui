@@ -63,8 +63,12 @@ Feedback.* → DialogManager.* → createDialog → Promise
 | `closeAll` | `void` — הפתוח נסגר באנימציה; שאר התור `dismissValue` מיד | כמו X/Esc לכל Promise |
 | `setLocale` | `void` — מחליף מילון ברירות. `'he'`/`'en'` או `Partial<feedbackLocale>` | לא סוגר דיאלוגים |
 | `getLocale` | עותק של המילון הפעיל | — |
+| `setToastPosition` | `void` — מחלקה על `#fb-toast-container` | לא נוגע בדיאלוגים |
+| `getToastPosition` | המיקום הפעיל (`bottom-center` בהתחלה) | — |
 
 - `size`: `'sm'` / `'md'` / `'lg'`. חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. לא `className` ציבורי.
+- `closeOnBackdrop`: חסר/`false` — backdrop לא סוגר. `true` רק על אובייקט הקריאה (לא על מחרוזת). סגירה = אותו `dismissValue` כמו X/Esc. רק אם `pointerdown` ו־`pointerup` שניהם `e.target === dialog` וכפתור ראשי (`button === 0`). גרירה מהקופסה לרקע לא סוגרת. `pointercancel` מאפס. בלי הדגל: אותו תנאי מפעיל `fb-note` במקום סגירה.
+- `vars`: אופציונלי על אובייקט דיאלוג (לא מחרוזת, לא טוסט). `normalizeDialogVars` לפני ה־Promise — throw סינכרוני, בלי כניסה לתור. מפתח `/^--[A-Za-z_][A-Za-z0-9_-]*$/`; ערך מחרוזת/מספר; `null` על מפתח = דילוג. לא אובייקט → `Error('Feedback: invalid dialog vars')`; מפתח/ערך לא תקין → `Error('Feedback: invalid CSS variable')`. `setProperty` על ה־`<dialog>`. inline דורס `size` לאותו טוקן. המופע הבא בלי `vars` חוזר לברירת המחדל. אין `className` ציבורי.
 - `confirm` תמיד `boolean`. צרכן שכותב `if (result)` ו־`if (!result)` חייב להיות נכון גם ל־X/Esc.
 - `menu`: `0` / `''` / `false` הם ערכים חוקיים. אסור לבדוק `if (item.value)` כדי להחליט אם להחזיר. רק `Object.hasOwn(item, 'value')`.
 - `coerceFieldValue`: `checkbox` → `raw === 'true'` (boolean). `number` ריק/`null` → `undefined`; `Number` סופי → number; אחרת `undefined`. שאר הטיפוסים → מחרוזת (או `''`).
@@ -72,7 +76,8 @@ Feedback.* → DialogManager.* → createDialog → Promise
 - `field.name` חייב `/^[A-Za-z_][A-Za-z0-9_-]*$/` — אחרת `throw`. לא לשנות את ה־regex בלי אישור.
 - כפתור: מחרוזת או `{ text, theme? }`. `convertBtn`: מחרוזת → `{ text, theme: '' }`. `theme` ריק → מחלקה `fb-btn-primary`. ביטול בלי theme → `secondary`.
 - `role`: `alert`/`confirm` = `alertdialog`; השאר `dialog`.
-- טוסט: לא Promise. מחזיר `{ close }`. ברירות משך: success/info 3000, warning 3500, error 4000. מקס' 5 גלויים (`:not(.fb-closing)`); עודף דוחה את הישן ב־`_fbDismiss`.
+- טוסט: לא Promise. מחזיר `{ close }`. ברירות משך: success/info 3000, warning 3500, error 4000. מקס' 5 גלויים (`:not(.fb-closing)`). ערימה `column` תמיד. למעלה: prepend (חדש ראשון ב-DOM); למטה: append. עודף דוחה את הישן (`pop` למעלה / `shift` למטה). סלוט `fb-toast-slot` + FLIP לאחים בכניסה; יציאה: `0fr` + fade. כניסה: `--fb-toast-in-duration` (`* 2.5`); יציאה: `--fb-duration`. טקסט נשבר ב-`max-width` של הקונטיינר (`min(24rem, 100vw - 2rem)`).
+- `setToastPosition(pos)`: רק `'top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end'`. אחרת `throw Error('Feedback: invalid toast position')`. מחלקה `fb-toast-pos-{pos}` על הקונטיינר. `start`/`end` logical לפי `dir`. פינות: רק `inset-inline-*`, בלי `left`/`right` (אחרת `end` נוחת ב-`start`). כניסה אנכית `±1.25rem`; צד `2rem`; `:dir(rtl)` הופך סימן X. חל מיד; לא יוצר קונטיינר אם אין טוסטים. לא per-toast. לא משנה דיאלוגים. ברירת מחדל `bottom-center`.
 - `closeAll` לא נוגע בטוסטים. דיאלוג שעוד לא הוצג: `resolve(dismissValue)` בלי `showModal`. הפתוח: אותו `close(dismissValue)` כמו X.
 - טקסט צרכן = טקסט בלבד. `\n` בהודעה: `white-space: pre-line` ב־CSS.
 - טקסט מובנה (כותרת/כפתור/placeholder/aria כשחסר בקריאה) רק מ־`fbStrings` / `feedback.locales.js`. ברירת מחדל `he`. לא לזהות מ־`<html lang>`. לא לשנות מפתחות `feedbackLocale` בלי אישור.
@@ -86,7 +91,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 - דיאלוג אחד פתוח. `close` חייב להיות idempotent (`closed`). בלי זה התור נשבר (שני `showModal`).
 - `cancel` על `<dialog>`: `preventDefault` + `close(dismissValue)`. בלי זה אין אנימציה / אין resolve.
 - Enter חוזר (`e.repeat`) על הדיאלוג: `preventDefault` + `stopPropagation` ב־capture. אחרת autofocus מאשר את הדיאלוג הבא בתור.
-- לחיצה על backdrop (`e.target === dialog`): רק אנימציית `fb-note`, **לא** סגירה. כניסה ב־`fb-opening` (לא animation ברירת מחדל על הקופסה). להסיר `fb-opening`/`fb-note` ב־`animationend` של `.fb-dialog-box` (לא ילדים) ובכניסה ל־`close`.
+- backdrop: `pointerdown`+`pointerup` שניהם על `dialog` (לא `click` בלבד). בלי `closeOnBackdrop`: `fb-note`. עם הדגל: `close(dismissValue)`. כניסה ב־`fb-opening` (לא animation ברירת מחדל על הקופסה). להסיר `fb-opening`/`fb-note` ב־`animationend` של `.fb-dialog-box` (לא ילדים) ובכניסה ל־`close`.
 - אחרי סגירה: `ToastManager.releaseFrom(dialog)` לפני `remove` — אחרת הקונטיינר נמחק עם הדיאלוג.
 - בניית DOM: `fbEl` / `createElement` / `textContent`. אסור `innerHTML` לטקסט צרכן.
 - מחלקות/מזהים: רק prefix `fb-`. לא להישען על CSS של המארח.
