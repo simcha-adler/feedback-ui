@@ -14,6 +14,8 @@ import { FeedbackLocales } from './feedback.locales.js';
  * @typedef {import('./feedback.d.ts').feedbackLocale} feedbackLocale
  * @typedef {import('./feedback.d.ts').feedbackLocaleId} feedbackLocaleId
  * @typedef {import('./feedback.d.ts').feedbackToastPosition} feedbackToastPosition
+ * @typedef {import('./feedback.d.ts').feedbackFieldType} feedbackFieldType
+ * @typedef {import('./feedback.d.ts').feedbackPromptType} feedbackPromptType
  */
 
 /** @type {feedbackLocale} */
@@ -219,12 +221,12 @@ function fbQA(root, tag, rest = '') {
     return /** @type {NodeListOf<HTMLElementTagNameMap[T]>} */ (root.querySelectorAll(tag + rest));
 }
 
-/** @type {readonly string[]} */
+/** @type {readonly feedbackFieldType[]} */
 const FORM_FIELD_TYPES = Object.freeze([
     'text', 'password', 'email', 'tel', 'url', 'search',
     'number', 'textarea', 'select', 'checkbox',
 ]);
-/** @type {readonly string[]} */
+/** @type {readonly feedbackPromptType[]} */
 const PROMPT_FIELD_TYPES = Object.freeze([
     'text', 'password', 'email', 'tel', 'url', 'search', 'number',
 ]);
@@ -313,15 +315,17 @@ const DialogManager = {
     },
 
     /**
+     * @template {string} T
      * @param {unknown} type
-     * @param {readonly string[]} allowed
+     * @param {readonly T[]} allowed
+     * @returns {T}
      */
     fieldType(type, allowed) {
         const resolved = type == null || type === '' ? 'text' : type;
-        if (typeof resolved !== 'string' || !allowed.includes(resolved)) {
+        if (typeof resolved !== 'string' || !allowed.includes(/** @type {T} */ (resolved))) {
             throw new Error(`Feedback: סוג שדה לא תקין: ${JSON.stringify(type)}`);
         }
-        return resolved;
+        return /** @type {T} */ (resolved);
     },
 
     applyInputLimits(control, field) {
@@ -574,6 +578,7 @@ const DialogManager = {
 
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
+        /** @type {feedbackPromptType} */
         let inputType = 'text';
 
         return DialogManager.createDialog({
