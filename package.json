@@ -1,5 +1,5 @@
 {
-    "name": "feedback-ui",
+    "name": "@simcha-adler/feedback-ui",
     "version": "1.2.0",
     "description": "דיאלוגים וטוסטים לדפדפן. אפס תלויות runtime, RTL/LTR, ESM + IIFE.",
     "type": "module",
@@ -50,6 +50,9 @@
         "name": "שמחה אדלר"
     },
     "license": "MIT",
+    "publishConfig": {
+        "access": "public"
+    },
     "homepage": "https://simcha-adler.github.io/feedback-ui/demo/",
     "repository": {
         "type": "git",

@@ -2,15 +2,15 @@
  * Feedback — דיאלוגים וטוסטים לדפדפן. ייצוא ציבורי יחיד: `Feedback`.
  *
  * ```ts
- * import { Feedback } from 'feedback-ui';
- * import 'feedback-ui/style.css';
+ * import { Feedback } from '@simcha-adler/feedback-ui';
+ * import '@simcha-adler/feedback-ui/style.css';
  * ```
  *
  * בלי bundler: `feedback.min.js` (IIFE) + `feedback.css`, ואז `window.Feedback`.
- * ב־npm: `node_modules/feedback-ui/dist/feedback.min.js` + `feedback.css`.
- * אין export בשם `feedback-ui/min`. אחרי `import` מ־ESM — אין גלובל ב־runtime
+ * ב־npm: `node_modules/@simcha-adler/feedback-ui/dist/feedback.min.js` + `feedback.css`.
+ * אין export בשם `@simcha-adler/feedback-ui/min`. אחרי `import` מ־ESM — אין גלובל ב־runtime
  * (גם אם `Window.Feedback` מופיע בטיפוסים בגלל IIFE).
- * חבילה: https://www.npmjs.com/package/feedback-ui
+ * חבילה: https://www.npmjs.com/package/@simcha-adler/feedback-ui
  * ריפו: https://github.com/simcha-adler/feedback-ui
  * דמו (IIFE מ־dist): https://simcha-adler.github.io/feedback-ui/demo/
  *
@@ -38,7 +38,7 @@
  * - כפתור: מחרוזת (הטקסט) או `{ text, theme? }`. בלי theme / `theme: ''` → primary. ביטול בלי theme → secondary.
  * - ברירות כותרת/כפתור/aria כשחסר — מ־`Feedback.getLocale()`. ברירת מחדל `he`.
  *   `setLocale('en' | 'he')` או `setLocale({ ok: 'OK', … })`. מפתח חסר באובייקט נופל ל־he.
- *   מבנה מלא: `feedbackLocale` / `feedback-ui/locales`. לא משנה `dir`.
+ *   מבנה מלא: `feedbackLocale` / `@simcha-adler/feedback-ui/locales`. לא משנה `dir`.
  */
 
 export type themeString = 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'error' | 'info' | 'outline' | '';
@@ -369,7 +369,7 @@ declare global {
     interface Window {
         /**
          * קיים ב־runtime רק אחרי IIFE (`feedback.min.js` / `dist/feedback.min.js`).
-         * אחרי `import { Feedback } from 'feedback-ui'` אין גלובל — להשתמש בייבוא, לא ב־`window.Feedback`.
+         * אחרי `import { Feedback } from '@simcha-adler/feedback-ui'` אין גלובל — להשתמש בייבוא, לא ב־`window.Feedback`.
          */
         Feedback: FeedbackObject
     }

@@ -11,7 +11,7 @@
 ## 1.1.0
 
 - `Feedback.setLocale` / `getLocale` — מילון טקסטים מובנים. ברירת מחדל עברית; `'en'` מובנה; שפה אחרת כאובייקט `feedbackLocale`.
-- קטלוג לא ממוזער: `src/feedback.locales.js` → `dist/feedback.locales.js`, ייצוא `feedback-ui/locales`.
+- קטלוג לא ממוזער: `src/feedback.locales.js` → `dist/feedback.locales.js`, ייצוא `@simcha-adler/feedback-ui/locales`.
 
 ## 1.0.0
 

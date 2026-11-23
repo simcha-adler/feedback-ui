@@ -2,7 +2,7 @@
 
 ספריית דיאלוגים וטוסטים לדפדפן. בלי תלויות, עם RTL מובנה, ו־API שמחכה ל־`await` כמו `alert` / `confirm` / `prompt` — בלי לתקוע את הדף.
 
-[npm](https://www.npmjs.com/package/feedback-ui) · [GitHub](https://github.com/simcha-adler/feedback-ui) · [דמו](https://simcha-adler.github.io/feedback-ui/demo/)
+[npm](https://www.npmjs.com/package/@simcha-adler/feedback-ui) · [GitHub](https://github.com/simcha-adler/feedback-ui) · [דמו](https://simcha-adler.github.io/feedback-ui/demo/)
 
 MIT · ESM + IIFE · CSS עצמאי · `prefers-color-scheme`
 
@@ -11,17 +11,17 @@ MIT · ESM + IIFE · CSS עצמאי · `prefers-color-scheme`
 ## התקנה
 
 ```bash
-npm install feedback-ui
+npm install @simcha-adler/feedback-ui
 ```
 
 ```js
-import { Feedback } from 'feedback-ui';
-import 'feedback-ui/style.css';
+import { Feedback } from '@simcha-adler/feedback-ui';
+import '@simcha-adler/feedback-ui/style.css';
 
 await Feedback.alert('הפעולה הושלמה');
 ```
 
-בלי bundler — שני קבצים מ־`dist/` (ב־npm: `node_modules/feedback-ui/dist/`). אין export בשם `feedback-ui/min`. `window.Feedback` קיים רק אחרי ה־IIFE, לא אחרי `import` מ־ESM.
+בלי bundler — שני קבצים מ־`dist/` (ב־npm: `node_modules/@simcha-adler/feedback-ui/dist/`). אין export בשם `@simcha-adler/feedback-ui/min`. `window.Feedback` קיים רק אחרי ה־IIFE, לא אחרי `import` מ־ESM.
 
 ```html
 <link rel="stylesheet" href="./dist/feedback.css" />
@@ -179,8 +179,8 @@ Feedback.getLocale();       // עותק של המילון הפעיל
 הקטלוג המלא (לא ממוזער) ב־`dist/feedback.locales.js`. ב־npm:
 
 ```js
-import { Feedback } from 'feedback-ui';
-import { FeedbackLocales } from 'feedback-ui/locales';
+import { Feedback } from '@simcha-adler/feedback-ui';
+import { FeedbackLocales } from '@simcha-adler/feedback-ui/locales';
 
 Feedback.setLocale(FeedbackLocales.en);
 ```

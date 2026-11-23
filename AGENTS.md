@@ -83,7 +83,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 - טקסט צרכן = טקסט בלבד. `\n` בהודעה: `white-space: pre-line` ב־CSS.
 - טקסט מובנה (כותרת/כפתור/placeholder/aria/הודעות ולידציה כשחסר בקריאה) רק מ־`fbStrings` / `feedback.locales.js`. ברירת מחדל `he`. לא לזהות מ־`<html lang>`. לא לשנות מפתחות `feedbackLocale` בלי אישור.
 - `setLocale('en'|'he')` מחליף מילון שלם. אובייקט: מיזוג על `he`, רק מפתחות קיימים שהם `string`. מזהה לא מוכר → `throw Error('Feedback: invalid locale')`. חל על דיאלוגים/טוסטים חדשים. לא משנה `dir`.
-- ייצוא npm נוסף לקטלוג: `feedback-ui/locales` (לא ייצוא שני מ־`feedback.js`). הקובץ ב־dist לא ממוזער.
+- ייצוא npm נוסף לקטלוג: `@simcha-adler/feedback-ui/locales` (לא ייצוא שני מ־`feedback.js`). הקובץ ב־dist לא ממוזער.
 
 ---
 
