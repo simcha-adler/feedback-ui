@@ -67,7 +67,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 | `getToastPosition` | המיקום הפעיל (`bottom-center` בהתחלה) | — |
 
 - `size`: `'sm'` / `'md'` / `'lg'`. חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. לא `className` ציבורי.
-- `closeOnBackdrop`: חסר/`false` — backdrop לא סוגר. `true` רק על אובייקט הקריאה (לא על מחרוזת). סגירה = אותו `dismissValue` כמו X/Esc. רק אם `pointerdown` ו־`pointerup` שניהם `e.target === dialog` וכפתור ראשי (`button === 0`). גרירה מהקופסה לרקע לא סוגרת. `pointercancel` מאפס. בלי הדגל: אותו תנאי מפעיל `fb-note` במקום סגירה.
+- `closeOnBackdrop`: חסר/`false` — backdrop לא סוגר. `true` רק על אובייקט הקריאה (לא על מחרוזת). סגירה = אותו `dismissValue` כמו X/Esc. רק אם `pointerdown` ו־`pointerup` שניהם `e.target === dialog` וכפתור ראשי (`button === 0`). גרירה מהקופסה לרקע לא סוגרת. `pointercancel` מאפס. בלי הדגל: אותו תנאי מפעיל `fb-note` במקום סגירה. עם הדגל: מחלקה `fb-close-on-backdrop` — `--fb-backdrop` עדין ו־`--fb-backdrop-blur: 0px` (עדיין אפשר לדרוס ב־`vars`).
 - `vars`: אופציונלי על אובייקט דיאלוג (לא מחרוזת, לא טוסט). `normalizeDialogVars` לפני ה־Promise — throw סינכרוני, בלי כניסה לתור. מפתח `/^--[A-Za-z_][A-Za-z0-9_-]*$/`; ערך מחרוזת CSS כמו בגיליון (בלי המרה); `null` על מפתח = דילוג. לא אובייקט → `Error('Feedback: invalid dialog vars')`; מפתח לא תקין או ערך שאינו מחרוזת → `Error('Feedback: invalid CSS variable')`. `setProperty` על ה־`<dialog>`. inline דורס `size` לאותו טוקן. המופע הבא בלי `vars` חוזר לברירת המחדל. אין `className` ציבורי.
 - `confirm` תמיד `boolean`. צרכן שכותב `if (result)` ו־`if (!result)` חייב להיות נכון גם ל־X/Esc.
 - `menu`: `0` / `''` / `false` הם ערכים חוקיים. אסור לבדוק `if (item.value)` כדי להחליט אם להחזיר. רק `Object.hasOwn(item, 'value')`.

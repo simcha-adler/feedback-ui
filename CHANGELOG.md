@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2
+
+- `closeOnBackdrop: true` — עמעום רקע עדין ובלי blur (מחלקה `fb-close-on-backdrop`). בלי הדגל העמעום נשאר כפי שהיה.
+
 ## 1.2.1
 
 - README באנגלית לדף npm. עברית ב־`README.he.md`.

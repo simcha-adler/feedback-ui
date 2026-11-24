@@ -31,6 +31,7 @@
  * - לכל דיאלוג כפתור X. X ו־Esc = ערך הביטול של אותו סוג. אין `cancelBtn` ב־`alert`.
  * - לחיצה על הרקע (backdrop) לא סוגרת כברירת מחדל — רק אנימציית אזהרה.
  *   `closeOnBackdrop: true` על אובייקט הקריאה: סגירה בערך הביטול, רק אם pointerdown ו־pointerup שניהם על הרקע (לא גרירה מהקופסה החוצה). מחרוזת ל־alert/confirm/prompt לא מפעילה את זה.
+ *   עם הדגל הרקע מעומעם בעדינות (בלי blur); בלי הדגל — העמעום הרגיל.
  * - אם `showModal` נכשל: ה־Promise נדחה ב־`Error('Feedback: failed to show dialog')`. אין resolve.
  * - כותרת, הודעה, תוויות וטוסט הם טקסט (`textContent`), לא HTML. `\n` בהודעת דיאלוג נשבר לשורה.
  * - `dir` מגיע מהמסמך. אין `className` ציבורי על דיאלוג.

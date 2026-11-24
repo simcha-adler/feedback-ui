@@ -1,6 +1,6 @@
 {
     "name": "@simcha-adler/feedback-ui",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "description": "דיאלוגים וטוסטים לדפדפן. אפס תלויות runtime, RTL/LTR, ESM + IIFE.",
     "type": "module",
     "main": "./dist/feedback.js",

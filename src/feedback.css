@@ -66,6 +66,28 @@
     --fb-backdrop: rgb(0 0 0 / 0.4);
 }
 
+/* closeOnBackdrop: עמעום עדין בלי blur — מסמן שכבה בלי מראה של מודאל נעול */
+.fb-container.fb-close-on-backdrop {
+    --fb-backdrop: rgb(0 0 0 / 0.14);
+    --fb-backdrop-blur: 0px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .fb-container.fb-close-on-backdrop {
+        --fb-backdrop: rgb(0 0 0 / 0.22);
+    }
+}
+
+[data-fb-theme="dark"] .fb-container.fb-close-on-backdrop,
+.fb-container.fb-close-on-backdrop[data-fb-theme="dark"] {
+    --fb-backdrop: rgb(0 0 0 / 0.22);
+}
+
+[data-fb-theme="light"] .fb-container.fb-close-on-backdrop,
+.fb-container.fb-close-on-backdrop[data-fb-theme="light"] {
+    --fb-backdrop: rgb(0 0 0 / 0.14);
+}
+
 /*================================
         דיאלוג
 ==================================*/

@@ -370,6 +370,7 @@ const DialogManager = {
         return new Promise((resolve, reject) => {
             const dialog = /** @type {FbDialog} */ (document.createElement('dialog'));
             dialog.className = 'fb-container fb-dialog fb-opening';
+            if (closeOnBackdrop) dialog.classList.add('fb-close-on-backdrop');
             if (size === 'sm' || size === 'lg') dialog.classList.add(`fb-dialog-${size}`);
             for (const [key, value] of cssVars) dialog.style.setProperty(key, value);
             dialog.setAttribute('role', role);

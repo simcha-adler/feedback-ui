@@ -268,7 +268,7 @@ await Feedback.confirm({
 });
 ```
 
-With the flag on, the dialog closes only if both the press and the release happened on the backdrop, so dragging from the dialog box outward does nothing. The result is the same cancel value as X.
+With the flag on, the dialog closes only if both the press and the release happened on the backdrop, so dragging from the dialog box outward does nothing. The result is the same cancel value as X. The backdrop is dimmed lightly with no blur — unlike the stronger scrim when backdrop clicks do not close.
 
 ### `closeAll`
 
