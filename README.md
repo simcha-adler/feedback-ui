@@ -1,14 +1,31 @@
 # Feedback
 
-ספריית דיאלוגים וטוסטים לדפדפן. בלי תלויות, עם RTL מובנה, ו־API שמחכה ל־`await` כמו `alert` / `confirm` / `prompt` — בלי לתקוע את הדף.
+**English** · [עברית](./README.he.md)
 
-[npm](https://www.npmjs.com/package/@simcha-adler/feedback-ui) · [GitHub](https://github.com/simcha-adler/feedback-ui) · [דמו](https://simcha-adler.github.io/feedback-ui/demo/)
+Dialogs and toasts for the browser. Zero dependencies, built-in RTL, and an API you can `await` like `alert` / `confirm` / `prompt` — without freezing the page.
 
-MIT · ESM + IIFE · CSS עצמאי · `prefers-color-scheme`
+[npm](https://www.npmjs.com/package/@simcha-adler/feedback-ui) · [GitHub](https://github.com/simcha-adler/feedback-ui) · [Live demo](https://simcha-adler.github.io/feedback-ui/demo/)
+
+MIT · ESM + IIFE · Standalone CSS · Light/dark theming · Native `<dialog>`
 
 ---
 
-## התקנה
+## Why Feedback
+
+- **The same `await` as `alert`, without blocking.** Promise-based, zero dependencies, ESM or a plain `<script>` tag. No framework needed.
+- **A real `<dialog>`, not an overlay.** Built on `<dialog>.showModal()`, so the top layer, Esc and focus handling come from the browser. No `z-index` wars with the host page.
+- **Toasts above dialogs, not behind them.** Toasts live in a popover; while a dialog is open they move *inside* it, so they stay visible.
+- **Text only, no HTML injection.** Titles, messages, labels and toasts are rendered with `textContent`. There is no API that accepts HTML.
+- **Return values you can trust.** `confirm` is always `true` or `false` — including after X or Esc. `menu` can return `0`, `''` or `false`.
+- **One dialog at a time.** The rest wait in a queue. A held-down Enter key can't confirm the next dialog by accident.
+- **Backdrop clicks don't close by default.** Safe for destructive actions. Opt in per call with `closeOnBackdrop: true`.
+- **RTL and LTR from the document.** Logical CSS properties, `dir` comes from your page. Hebrew by default, English built in, any language via a dictionary.
+- **Per-call styling that doesn't leak.** `size` and `vars` apply to one dialog and disappear with it.
+- **Accessible by construction.** `alertdialog` for alert/confirm, `dialog` for the rest, proper `aria-*` labelling, `aria-live` toasts, focus set after the dialog is actually shown.
+
+---
+
+## Installation
 
 ```bash
 npm install @simcha-adler/feedback-ui
@@ -18,165 +35,270 @@ npm install @simcha-adler/feedback-ui
 import { Feedback } from '@simcha-adler/feedback-ui';
 import '@simcha-adler/feedback-ui/style.css';
 
-await Feedback.alert('הפעולה הושלמה');
+await Feedback.alert('Operation completed');
 ```
 
-בלי bundler — שני קבצים מ־`dist/` (ב־npm: `node_modules/@simcha-adler/feedback-ui/dist/`). אין export בשם `@simcha-adler/feedback-ui/min`. `window.Feedback` קיים רק אחרי ה־IIFE, לא אחרי `import` מ־ESM.
+### Without a bundler
+
+Use the two files from `dist/` (with npm: `node_modules/@simcha-adler/feedback-ui/dist/`):
 
 ```html
 <link rel="stylesheet" href="./dist/feedback.css" />
 <script src="./dist/feedback.min.js"></script>
 <script>
-  Feedback.alert('שלום');
+  Feedback.alert('Hello');
 </script>
 ```
 
-דמו חי (אותם קבצי `dist` שבחבילה): [simcha-adler.github.io/feedback-ui/demo](https://simcha-adler.github.io/feedback-ui/demo/).
+`window.Feedback` exists only after loading the IIFE build, not after an ESM `import`. There is no `@simcha-adler/feedback-ui/min` export.
 
-מקומית, אחרי `npm run build`, משרת בשורש הריפו:
+### Browser support
 
-```bash
-python -m http.server 5502
-```
-
-ואז [http://127.0.0.1:5502/demo/](http://127.0.0.1:5502/demo/). הדמו טוען `dist/feedback.css` + `dist/feedback.min.js` (IIFE), לא את `src/`.
+Requires the `<dialog>` element and the Popover API. Browsers or WebViews without them are not supported.
 
 ---
 
-## מה הספרייה עושה
-
-| מתודה | מתי | מה חוזר |
-|---|---|---|
-| `alert(message \| {…})` | הודעה עם כפתור אחד | `Promise<void>` — ב־JS תמיד `undefined`, לא לקרוא |
-| `confirm(message \| {…})` | כן / לא | `Promise<boolean>` — תמיד `true` או `false` |
-| `prompt(message \| {…})` | שדה קלט אחד | ערך באישור, `null` בביטול |
-| `menu({ buttons })` | כמה פעולות | `value` אם המפתח קיים, אחרת `undefined`; `null` בביטול |
-| `selector({ items })` | רשימה (אופציונלי חיפוש) | `value` של הפריט, `null` בביטול |
-| `form({ fields })` | כמה שדות | אובייקט לפי `name`, `null` בביטול |
-| `toast.success` / `info` / `warning` / `error` | הודעה קצרה בלי לחסום | `{ close() }` — לא Promise |
-| `closeAll()` | סגירת דיאלוג פתוח + ריקון התור | `void` — כל Promise נפתר כמו ביטול |
-| `setLocale` / `getLocale` | מילון טקסטים מובנים | `void` / עותק המילון. ברירת מחדל עברית |
-| `setToastPosition` / `getToastPosition` | מיקום הטוסטים | `void` / המיקום. ברירת מחדל `bottom-center` |
-
-דיאלוג אחד בלבד על המסך. קריאות נוספות נכנסות לתור ומופיעות אחרי שהקודם נסגר. לכל דיאלוג כפתור X; X ו־Esc = ביטול. לחיצה על הרקע **לא** סוגרת, אלא אם העברת `closeOnBackdrop: true` באובייקט הקריאה. אז נסגר רק אם ה־press וה־release היו שניהם על הרקע (לא גרירה מהקופסה החוצה), וחוזר אותו ערך ביטול כמו X.
-
-אם `showModal` נכשל — ה־Promise נדחה (`Error('Feedback: failed to show dialog')`), לא resolve.
-
-`size: 'sm' | 'md' | 'lg'` על כל דיאלוג. בלי `size` = `md` (400px). `lg` לטופס רחב.
-
-`vars` על אובייקט דיאלוג — משתני CSS למופע הזה בלבד (לא לטוסטים, לא לקריאה הבאה). מחרוזת ל־alert/confirm/prompt לא מעבירה `vars`.
-
-טוסטים לא נחסמים: עד 5 גלויים, מעבר עכבר או פוקוס עוצר את הטיימר, והם נשארים מעל דיאלוג פתוח.
-
----
-
-## שימוש
+## Quick start
 
 ```js
-await Feedback.alert('נשמר.');
+await Feedback.alert('Saved.');
 
 const ok = await Feedback.confirm({
-  title: 'מחיקה',
-  message: 'למחוק את הרשומה? לא ניתן לשחזר.',
-  confirmBtn: { text: 'מחק', theme: 'danger' },
-  cancelBtn: 'ביטול',
+  title: 'Delete',
+  message: 'Delete this record? This cannot be undone.',
+  confirmBtn: { text: 'Delete', theme: 'danger' },
+  cancelBtn: 'Cancel',
 });
 if (!ok) return;
 
+Feedback.toast.success('Deleted');
+```
+
+---
+
+## API at a glance
+
+| Method | Use it for | Resolves with |
+|---|---|---|
+| `alert(message \| {…})` | A message with one button | `Promise<void>` — always `undefined` in JS; don't read it |
+| `confirm(message \| {…})` | Yes / no | `Promise<boolean>` — always `true` or `false` |
+| `prompt(message \| {…})` | One input field | The value on confirm, `null` on cancel |
+| `menu({ buttons })` | Several actions | The button's `value` (or `undefined` if it has none); `null` on cancel |
+| `selector({ items })` | Pick from a list (optionally searchable) | The item's `value`; `null` on cancel |
+| `form({ fields })` | Several fields | An object keyed by `name`; `null` on cancel |
+| `toast.success` / `info` / `warning` / `error` | A short message that doesn't block | `{ close() }` — not a Promise |
+| `closeAll()` | Close the open dialog and clear the queue | `void` — every pending Promise resolves as if cancelled |
+| `setLocale` / `getLocale` | Built-in text dictionary | `void` / a copy of the active dictionary |
+| `setToastPosition` / `getToastPosition` | Where toasts appear | `void` / the active position |
+
+`alert`, `confirm` and `prompt` accept either a string (the message) or an options object. A string cannot carry `closeOnBackdrop` or `vars`.
+
+---
+
+## Return values
+
+Always check by type, not by truthiness.
+
+| API | On confirm | On X / Esc / cancel |
+|---|---|---|
+| `alert` | `undefined` | `undefined` |
+| `confirm` | `true` | **`false`** (never `null`) |
+| `prompt` | The field value | `null` |
+| `menu` | `button.value` if the key exists, otherwise `undefined` | `null` |
+| `selector` | `items[i].value` | `null` |
+| `form` | `{ [field.name]: value }` | `null` |
+
+Details worth knowing:
+
+- **`menu`** returns `0`, `''` and `false` when those are the `value`. Check for `null` to detect cancel — don't write `if (result)`.
+- **`prompt` with `type: 'number'`** and **`number` form fields** share one rule: empty → `undefined`; a finite number → `number`; `NaN` / `Infinity` → `undefined`.
+- **`checkbox` form fields** are always `true` or `false`.
+- **`select` form fields** without a `default` start on an empty row, not on the first option.
+- All other field types return a string (or `''`). Values are always primitives — never `File`.
+- **`closeAll`** while a close is already running keeps the chosen value: a confirm is not turned into a cancel. A new dialog waits for the closing animation.
+
+---
+
+## Dialogs
+
+### Options
+
+Shared by every dialog (object form only):
+
+| Option | Meaning |
+|---|---|
+| `title` | Heading. Defaults come from the locale. |
+| `message` | Body text (plain text; `\n` becomes a line break). |
+| `size` | `'sm'` (~20rem) · `'md'` (default, 400px) · `'lg'` (~40rem, for wide forms). |
+| `vars` | CSS variables for this dialog only. See [Per-dialog styling](#per-dialog-styling). |
+| `closeOnBackdrop` | `true` to let a backdrop click close the dialog. See [Behavior](#behavior). |
+
+Per method:
+
+| Method | Method-specific options |
+|---|---|
+| `alert` | `btn` |
+| `confirm` | `confirmBtn`, `cancelBtn` |
+| `prompt` | `defaultText`, `placeholder`, `type`, `required`, `min`, `max`, `step`, `confirmBtn`, `cancelBtn` |
+| `menu` | `buttons: { text, value?, theme? }[]`, `cancelBtn` |
+| `selector` | `items: { text, value }[]`, `searchable`, `searchPlaceholder`, `cancelBtn` |
+| `form` | `fields`, `confirmBtn`, `cancelBtn` |
+
+`alert` has no `cancelBtn`.
+
+### Buttons
+
+A button is a string (`'OK'`) or `{ text, theme? }`.
+
+`theme`: `primary` · `secondary` · `danger` · `warning` · `success` · `error` · `info` · `outline`.
+
+An empty or missing `theme` gives a primary button; a cancel button without a theme is secondary.
+
+### Examples
+
+```js
 const name = await Feedback.prompt({
-  title: 'שם פרויקט',
-  defaultText: 'בלי שם',
+  title: 'Project name',
+  defaultText: 'Untitled',
   required: true,
 });
 if (name == null) return;
 
 const action = await Feedback.menu({
-  title: 'הקובץ',
+  title: 'File',
   buttons: [
-    { text: 'עריכה', value: 'edit' },
-    { text: 'שכפול', value: 'duplicate', theme: 'secondary' },
-    { text: 'מחיקה', value: 'delete', theme: 'danger' },
+    { text: 'Edit', value: 'edit' },
+    { text: 'Duplicate', value: 'duplicate', theme: 'secondary' },
+    { text: 'Delete', value: 'delete', theme: 'danger' },
   ],
 });
 
 const lang = await Feedback.selector({
-  title: 'שפה',
+  title: 'Language',
   searchable: true,
   items: [
-    { text: 'עברית', value: 'he' },
+    { text: 'Hebrew', value: 'he' },
     { text: 'English', value: 'en' },
   ],
 });
 
 const profile = await Feedback.form({
-  title: 'פרופיל',
+  title: 'Profile',
   size: 'lg',
   fields: [
-    { name: 'fullName', label: 'שם', required: true },
-    { name: 'age', label: 'גיל', type: 'number', min: 0 },
-    { name: 'dept', label: 'מחלקה', type: 'select', options: ['פיתוח', { value: 'hr', text: 'משאבי אנוש' }] },
-    { name: 'notes', label: 'הערות', type: 'textarea' },
-    { name: 'newsletter', label: 'עדכונים', type: 'checkbox', default: true },
+    { name: 'fullName', label: 'Name', required: true },
+    { name: 'age', label: 'Age', type: 'number', min: 0 },
+    { name: 'dept', label: 'Department', type: 'select', options: ['Engineering', { value: 'hr', text: 'Human Resources' }] },
+    { name: 'notes', label: 'Notes', type: 'textarea' },
+    { name: 'newsletter', label: 'Updates', type: 'checkbox', default: true },
   ],
 });
-
-Feedback.toast.success('נשמר');
-Feedback.toast.error('נכשל', 4000);
-const t = Feedback.toast.info('טוען…');
-t.close();
-
-Feedback.setToastPosition('bottom-end');
-Feedback.getToastPosition(); // 'bottom-end'
-
-Feedback.closeAll();
 ```
 
-`closeOnBackdrop` רק באובייקט, לא במחרוזת:
+### Prompt and form validation
 
-```js
-await Feedback.confirm({
-  message: 'למחוק?',
-  closeOnBackdrop: true, // X / Esc / רקע מלא → false
-});
-```
+`required`, `min`, `max`, `step` use native validation, and Enter won't submit an invalid value. Validation messages come from the active locale dictionary (`validation*` keys), not from the browser's language.
 
-`vars` — טוקנים לדיאלוג הזה. אחרי סגירה הדיאלוג הבא חוזר לברירת המחדל:
+`prompt` `type`: `text` (default), `password`, `email`, `tel`, `url`, `search`, `number`.
 
-```js
-await Feedback.form({
-  title: 'חשבונית',
-  vars: { '--fb-dialog-max': '45rem', '--fb-primary': '#0f766e' },
-  fields: [{ name: 'id', label: 'מספר' }],
-});
-```
+### Form fields
 
-כפתור יכול להיות מחרוזת (`'אישור'`) או `{ text, theme }`.  
-`theme`: `primary` · `secondary` · `danger` · `warning` · `success` · `error` · `info` · `outline`.
+| Field option | Meaning |
+|---|---|
+| `name` | Key in the result object. Must match `/^[A-Za-z_][A-Za-z0-9_-]*$/` — no spaces, no non-Latin characters. |
+| `label` | Visible label. |
+| `type` | `text` (default), `password`, `email`, `tel`, `url`, `search`, `number`, `textarea`, `select`, `checkbox`. |
+| `required` | Native required validation. |
+| `default` | Initial value. For `checkbox`, a truthy value means checked. |
+| `placeholder` | Placeholder text. |
+| `min` / `max` / `step` | Native constraints. |
+| `options` | For `select`: strings (used as both value and text) or `{ value, text }`. |
 
-טקסט צרכן (כותרת, הודעה, תוויות, טוסט) מוצג כטקסט — לא כ־HTML. `\n` בהודעת דיאלוג נשבר לשורה חדשה.
+An unsupported `type` (such as `file` or `date`) or an invalid `name` **rejects the returned Promise** when the form is built — it is not a synchronous throw, so use `await` or `.catch`.
 
 ---
 
-## שפה (טקסטים מובנים)
-
-ברירות כותרת, כפתור, placeholder ו־aria-label מגיעות ממילון. ברירת המחדל **עברית**. מה שהועבר בקריאה (`title`, `confirmBtn`, …) לא משתנה. `dir` נשאר מהמסמך.
+## Toasts
 
 ```js
-Feedback.setLocale('en');   // אנגלית מובנית
-Feedback.setLocale('he');   // חזרה לעברית
-Feedback.getLocale();       // עותק של המילון הפעיל
+Feedback.toast.success('Saved');
+Feedback.toast.error('Failed', 4000);
+Feedback.toast.warning('Check your input', 3500, '⚠️');
+
+const t = Feedback.toast.info('Loading…');
+t.close();
 ```
 
-בלי bundler, אחרי `feedback.min.js`:
+Signature: `toast.<type>(text, duration?, icon?)`, returns `{ close() }`.
 
-```html
-<script src="./dist/feedback.min.js"></script>
-<script>
-  Feedback.setLocale('en');
-</script>
+- Default durations: success / info 3000 ms, warning 3500 ms, error 4000 ms. `duration: 0` closes immediately.
+- `icon` is a character (an emoji), rendered as text.
+- Up to 5 toasts are visible at once; a new one pushes out the oldest.
+- Hovering or focusing a toast pauses its timer.
+- Toasts stay above an open dialog.
+- Long text wraps at the container's maximum width.
+
+### Position
+
+```js
+Feedback.setToastPosition('bottom-end');
+Feedback.getToastPosition(); // 'bottom-end'
 ```
 
-הקטלוג המלא (לא ממוזער) ב־`dist/feedback.locales.js`. ב־npm:
+Allowed: `top-start` · `top-center` · `top-end` · `bottom-start` · `bottom-center` · `bottom-end`. Default: `bottom-center`. `start` and `end` follow the document's `dir`. The position is global (not per toast) and applies immediately. An unknown value throws `Error('Feedback: invalid toast position')`.
+
+---
+
+## Behavior
+
+### Queue
+
+Only one dialog is on screen at a time. Additional calls are queued and appear after the previous one closes. A held-down Enter key (key repeat) never confirms the next dialog in the queue.
+
+### Closing
+
+Every dialog has an X button. **X and Esc always mean cancel**, resolving with the cancel value from the table above.
+
+Clicking the backdrop does **not** close a dialog by default — it only plays a short attention animation. Pass `closeOnBackdrop: true` in an options object to enable it:
+
+```js
+await Feedback.confirm({
+  message: 'Delete?',
+  closeOnBackdrop: true, // X / Esc / backdrop → false
+});
+```
+
+With the flag on, the dialog closes only if both the press and the release happened on the backdrop, so dragging from the dialog box outward does nothing. The result is the same cancel value as X.
+
+### `closeAll`
+
+`Feedback.closeAll()` closes the open dialog with its normal animation and immediately resolves everything still queued with the cancel value. It doesn't touch toasts.
+
+### Errors
+
+| Situation | What happens |
+|---|---|
+| `showModal` fails | The Promise **rejects** with `Error('Feedback: failed to show dialog')`. |
+| Invalid field `name` / unsupported field or prompt `type` | The Promise **rejects** when the dialog is built. |
+| Invalid `vars` | **Throws synchronously**, before the dialog is queued. |
+| Unknown locale | `setLocale` throws `Error('Feedback: invalid locale')`. |
+| Unknown toast position | `setToastPosition` throws `Error('Feedback: invalid toast position')`. |
+
+---
+
+## Locale (built-in text)
+
+Default titles, buttons, placeholders, aria-labels and validation messages come from a dictionary. The default is **Hebrew**. Anything you pass in a call (`title`, `confirmBtn`, …) is never replaced. `dir` is not affected.
+
+```js
+Feedback.setLocale('en');   // built-in English
+Feedback.setLocale('he');   // back to Hebrew
+Feedback.getLocale();       // a copy of the active dictionary
+```
+
+`setLocale` affects only dialogs and toasts opened **after** the call.
+
+The full unminified catalog is in `dist/feedback.locales.js`. With npm:
 
 ```js
 import { Feedback } from '@simcha-adler/feedback-ui';
@@ -185,9 +307,9 @@ import { FeedbackLocales } from '@simcha-adler/feedback-ui/locales';
 Feedback.setLocale(FeedbackLocales.en);
 ```
 
-### שפה אחרת
+### Another language, or small tweaks
 
-אין `setLocale('fr')` מובנה. מעתיקים את המבנה, מתרגמים את הערכים, מעבירים ל־`setLocale`. מפתח שחסר או שאינו מחרוזת נשאר בעברית.
+Pass an object. It is merged on top of the Hebrew dictionary; only keys with string values are applied, and any key you omit stays in Hebrew.
 
 ```js
 Feedback.setLocale({
@@ -196,66 +318,49 @@ Feedback.setLocale({
   ok: 'OK',
   cancel: 'Annuler',
   save: 'Enregistrer',
-  alertTitle: 'Message',
-  confirmTitle: 'Confirmation requise',
-  menuTitle: 'Choisir une action',
-  inputTitle: 'Saisie',
-  promptPlaceholder: 'Saisir ici…',
-  selectorTitle: 'Choisir une option',
-  selectorSearch: 'Rechercher dans la liste…',
-  selectorEmpty: 'Aucun élément',
-  selectorNoResults: 'Aucun résultat',
-  selectorList: 'Liste des options',
+  // …translate every key you need
 });
 ```
 
-| מפתח | מתי מופיע |
+To tweak English instead, start from the full English dictionary:
+
+```js
+Feedback.setLocale({ ...FeedbackLocales.en, ok: 'Got it' });
+```
+
+| Key | Where it appears |
 |---|---|
-| `closeDialog` | aria-label של X בדיאלוג |
-| `closeToast` | aria-label של X בטוסט |
-| `ok` | כפתור אישור ב־alert / confirm |
-| `cancel` | כפתור ביטול |
-| `save` | כפתור אישור ב־prompt / form |
-| `alertTitle` | כותרת alert |
-| `confirmTitle` | כותרת confirm |
-| `menuTitle` | כותרת menu |
-| `inputTitle` | כותרת prompt ו־form |
-| `promptPlaceholder` | placeholder ב־prompt |
-| `selectorTitle` | כותרת selector |
-| `selectorSearch` | placeholder חיפוש ב־selector |
-| `selectorEmpty` | רשימה ריקה |
-| `selectorNoResults` | חיפוש בלי תוצאות |
-| `selectorList` | aria-label של רשימת selector |
-
-חל רק על דיאלוג/טוסט שנפתח **אחרי** הקריאה. מזהה לא מוכר → `Error('Feedback: invalid locale')`.
-
----
-
-## ערכים שחוזרים
-
-חשוב לבדוק לפי הטיפוס, לא לפי truthiness.
-
-- **confirm** — אישור → `true`. ביטול, X ו־Esc → `false`. אף פעם לא `null`.
-- **alert** — TS: `void` (לא לקרוא). JS: תמיד `undefined` (גם ב־X / Esc).
-- **prompt / menu / selector / form** — ביטול, X ו־Esc → `null`.
-- **menu** — מחזיר גם `0`, `''`, `false` אם זה ה־`value`. בלי מפתח `value` על הכפתור → `undefined`.
-- **prompt / שדה `number`** — אותו coerce: ריק באישור → `undefined`; מספר סופי → `number`; `NaN` / `Infinity` → `undefined`.
-- **checkbox בטופס** — תמיד `true` / `false`.
-- **select בלי `default`** — שורה ריקה נבחרת, לא האופציה הראשונה.
-- **`form` עם `name` או `type` לא חוקי** — ה־Promise נדחה (לא throw סינכרוני). צריך `await` / `.catch`. `type` מותר: `text` (ברירת מחדל), `password`, `email`, `tel`, `url`, `search`, `number`, `textarea`, `select`, `checkbox`. אחר (כולל `file`) נדחה בבנייה. ערכי השדות באישור הם רק פרימיטיבים (`string` / `number` / `boolean` / `undefined`).
-- **`prompt` עם `type` לא חוקי** — אותו דחיית Promise. מותר: `text`, `password`, `email`, `tel`, `url`, `search`, `number`.
-- **`closeAll`** — אם הסגירה כבר רצה, הערך שנבחר נשאר (אישור לא נהפך לביטול). דיאלוג חדש מחכה לאנימציה.
-- **טוסט** — `icon` הוא תו (emoji), לא HTML. `duration: 0` סוגר מיד. מיקום: `Feedback.setToastPosition('top-start' | 'top-center' | 'top-end' | 'bottom-start' | 'bottom-center' | 'bottom-end')`. `start`/`end` לפי `dir`. ערך לא מוכר → `Error('Feedback: invalid toast position')`.
-- **`closeOnBackdrop`** — אופציונלי. ברירת מחדל לא סוגר. עם `true`: ערך הביטול של אותו סוג דיאלוג.
-- **`vars`** — אופציונלי. מפתחות `--שם` (כמו `--fb-dialog-max`). ערך = מחרוזת CSS כמו בגיליון (`'32rem'`, `'0.2s'`), בלי המרת מספרים. throw סינכרוני אם המפתח לא תקין או שהערך אינו מחרוזת (`Error('Feedback: invalid CSS variable')`) או אם `vars` לא אובייקט (`Error('Feedback: invalid dialog vars')`). דורס `size` לאותו טוקן. לא דולף לדיאלוג הבא.
+| `closeDialog` | aria-label of the dialog's X button |
+| `closeToast` | aria-label of the toast's X button |
+| `ok` | Confirm button in alert / confirm |
+| `cancel` | Cancel button |
+| `save` | Confirm button in prompt / form |
+| `alertTitle` | Default alert title |
+| `confirmTitle` | Default confirm title |
+| `menuTitle` | Default menu title |
+| `inputTitle` | Default prompt and form title |
+| `promptPlaceholder` | Prompt placeholder |
+| `selectorTitle` | Default selector title |
+| `selectorSearch` | Selector search placeholder |
+| `selectorEmpty` | Empty selector list |
+| `selectorNoResults` | Search with no results |
+| `selectorList` | aria-label of the selector list |
+| `validationRequired` | Required field left empty |
+| `validationType` | Type mismatch (email, url, …) |
+| `validationMin` / `validationMax` | Value below min / above max |
+| `validationStep` | Value doesn't fit `step` |
+| `validationTooShort` / `validationTooLong` | Text length out of range |
+| `validationPattern` | Value doesn't match the pattern |
 
 ---
 
-## עיצוב וכיוון
+## Styling and direction
 
-הספרייה לא כופה `dir`. היא משתמשת ב־logical properties, ולכן נראית נכון ב־RTL וב־LTR לפי `dir` של המסמך.
+The library never forces `dir`. It uses logical properties, so it looks right in RTL and LTR according to the document.
 
-צבעים ואנימציה הם משתנים על `.fb-container`:
+### Global styling
+
+Colors, radius and timing are CSS variables on `.fb-container`:
 
 ```css
 .fb-container {
@@ -266,15 +371,65 @@ Feedback.setLocale({
 }
 ```
 
-דריסה ב־CSS של האפליקציה על `.fb-container` חלה על **כל** דיאלוג וטוסט. לקריאה אחת — `vars` באובייקט הדיאלוג, לא גיליון גלובלי.
+Overriding them in your stylesheet affects **every** dialog and toast. All class names and IDs use the `fb-` prefix, and the library doesn't rely on the host page's CSS.
 
-ערכת נושא:
+### Per-dialog styling
 
-- ברירת מחדל: `prefers-color-scheme`
-- כפייה: `data-fb-theme="dark"` או `"light"` על `.fb-container` או על אב (`html` / `body`)
+For a single call, use `size` or `vars` on the options object. `vars` sets CSS variables on that dialog only; the next dialog in the queue returns to the defaults.
+
+```js
+await Feedback.form({
+  title: 'Invoice',
+  vars: { '--fb-dialog-max': '45rem', '--fb-primary': '#0f766e' },
+  fields: [{ name: 'id', label: 'Number' }],
+});
+```
+
+Rules for `vars`:
+
+- Keys must be CSS custom properties: `/^--[A-Za-z_][A-Za-z0-9_-]*$/`.
+- Values are CSS strings exactly as in a stylesheet (`'32rem'`, `'0.2s'`) — numbers are not converted.
+- A `null` or `undefined` value skips that key.
+- An invalid key or a non-string value throws `Error('Feedback: invalid CSS variable')`; a `vars` that isn't an object throws `Error('Feedback: invalid dialog vars')`. Both happen synchronously, before the dialog is queued.
+- `vars` wins over `size` for the same token (for example `--fb-dialog-max`).
+- `vars` doesn't apply to toasts.
+
+There is no public `className` option.
+
+### Theming
+
+- Default: follows `prefers-color-scheme`.
+- Force a theme: `data-fb-theme="dark"` or `"light"` on `.fb-container` or any ancestor (`html` / `body`).
 
 ---
 
-## רישיון
+## How it compares
 
-MIT — שמחה אדלר, 2026.
+| | Feedback | Native `alert` / `confirm` / `prompt` | SweetAlert2 |
+|---|---|---|---|
+| Usage | `await Feedback.confirm(…)`, a method per dialog type | Blocks the whole thread | `Swal.fire({…})`; result is an object (`isConfirmed` / `isDismissed`) |
+| Rendering | `<dialog>.showModal()` (top layer) | System window, not stylable | Overlay by default; opt-in `topLayer` option |
+| Toasts above a dialog | Yes — they move into the open dialog | No toasts | Toast is a mode of the popup |
+| HTML in content | Never (text only) | Text only | `html` option renders HTML — sanitize it yourself |
+| Result checking | `confirm` is always a boolean | Boolean / string / `null` | Check the result object's fields |
+| Backdrop click | Doesn't close by default | n/a | Closes by default |
+| Dependencies | None | None | None |
+
+Beyond the table: Feedback has a built-in dialog queue with Enter-repeat protection, document-driven RTL, a built-in Hebrew/English dictionary with locale-based validation messages, and per-call `size`/`vars` that never leak to the next dialog.
+
+### When not to choose Feedback
+
+- You need **HTML or custom slots** inside the dialog (links, rich SVG, forms beyond `form`).
+- You need a **public `className`** per dialog, or per-toast positioning.
+- You need `file` / `date` inputs, or non-primitive form values.
+- You want an **official React wrapper** (Feedback is called from your state/handlers, not rendered as JSX).
+- You must support browsers without `<dialog>` and the Popover API.
+- You rely on a **plugin ecosystem**.
+
+In those cases SweetAlert2 or a UI kit (Radix, MUI, Bootstrap) is a better fit.
+
+---
+
+## License
+
+MIT — Simcha Adler, 2026.
