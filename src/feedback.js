@@ -120,10 +120,31 @@ const DialogQueue = {
     /**
      * פונקציית המעטפת שמכניסה בקשות לתור
      * @param {FbDialog} dialog
+     * @param {boolean} [urgent]
      */
-    push(dialog) {
-        this.queue.push(dialog);
+    push(dialog, urgent) {
+        if (urgent) {
+            this.parkOpen();
+            this.queue.unshift(dialog);
+        } else {
+            this.queue.push(dialog);
+        }
         this.processQueue();
+    },
+
+    /**
+     * מסיר את הדיאלוג הפתוח מהמסך בלי לפתור את ה־Promise, ומחזיר אותו לראש התור.
+     * דיאלוג שכבר ב־`fb-closing` לא נחנה — הוא בדרך החוצה.
+     */
+    parkOpen() {
+        const open = /** @type {FbDialog | null} */ (document.querySelector('dialog.fb-dialog[open]'));
+        if (!open || open.classList.contains('fb-closing')) return;
+        ToastManager.releaseFrom(open);
+        open.classList.remove('fb-opening', 'fb-note');
+        open.close();
+        open.remove();
+        this.queue.unshift(open);
+        this.isProcessing = false;
     },
 
     /**
@@ -134,6 +155,7 @@ const DialogQueue = {
             const dialog = this.queue.shift();
             if (!dialog) return;
             this.isProcessing = true;
+            dialog.classList.add('fb-opening');
             try {
                 document.body.appendChild(dialog);
                 dialog.showModal();
@@ -431,6 +453,8 @@ const DialogManager = {
             dialog._fbForceClose = () => close(dismissValue);
 
             dialog._fbShown = () => {
+                if (dialog._fbRendered) return;
+                dialog._fbRendered = true;
                 if (onRender) onRender(dialog, close);
             };
 
@@ -478,15 +502,15 @@ const DialogManager = {
                 }
             }, true);
 
-            DialogQueue.push(dialog);
+            DialogQueue.push(dialog, options.urgent === true);
         });
     },
 
     // הודעת אישור (Alert) פשוטה
-    alert({ message, title = fbStrings.alertTitle, btn = fbStrings.ok, size, closeOnBackdrop, vars }) {
+    alert({ message, title = fbStrings.alertTitle, btn = fbStrings.ok, size, closeOnBackdrop, vars, urgent }) {
         btn = DialogManager.convertBtn(btn);
         return DialogManager.createDialog({
-            title, message, size, closeOnBackdrop, vars, dismissValue: undefined, role: 'alertdialog',
+            title, message, size, closeOnBackdrop, vars, urgent, dismissValue: undefined, role: 'alertdialog',
             buildContent(root) {
                 root.append(fbEl('div', { className: 'fb-dialog-footer' }, [
                     fbEl('button', {
@@ -504,12 +528,12 @@ const DialogManager = {
     },
 
     //אישור או ביטול פעולה
-    confirm({ message, title = fbStrings.confirmTitle, confirmBtn, cancelBtn, size, closeOnBackdrop, vars }) {
+    confirm({ message, title = fbStrings.confirmTitle, confirmBtn, cancelBtn, size, closeOnBackdrop, vars, urgent }) {
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
         return DialogManager.createDialog({
-            title, message, size, closeOnBackdrop, vars, dismissValue: false, role: 'alertdialog',
+            title, message, size, closeOnBackdrop, vars, urgent, dismissValue: false, role: 'alertdialog',
             buildContent(root) {
                 root.append(fbEl('div', { className: 'fb-dialog-buttons' }, [
                     fbEl('button', {
@@ -535,11 +559,11 @@ const DialogManager = {
     },
 
     // אישור פעולה עם אפשרויות מרובות או תפריט פעולות
-    menu({ message, title = fbStrings.menuTitle, buttons, cancelBtn = fbStrings.cancel, size, closeOnBackdrop, vars }) {
+    menu({ message, title = fbStrings.menuTitle, buttons, cancelBtn = fbStrings.cancel, size, closeOnBackdrop, vars, urgent }) {
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
         return DialogManager.createDialog({
-            title, message, size, closeOnBackdrop, vars,
+            title, message, size, closeOnBackdrop, vars, urgent,
             buildContent(root) {
                 buttons.forEach((btn, index) => {
                     root.append(fbEl('button', {
@@ -575,7 +599,7 @@ const DialogManager = {
     },
 
     // בקשת קלט (Prompt)
-    prompt({ message, title = fbStrings.inputTitle, defaultText = '', placeholder = fbStrings.promptPlaceholder, confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, type = 'text', required = false, min, max, step, size, closeOnBackdrop, vars }) {
+    prompt({ message, title = fbStrings.inputTitle, defaultText = '', placeholder = fbStrings.promptPlaceholder, confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, type = 'text', required = false, min, max, step, size, closeOnBackdrop, vars, urgent }) {
 
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
@@ -583,7 +607,7 @@ const DialogManager = {
         let inputType = 'text';
 
         return DialogManager.createDialog({
-            title, message, size, closeOnBackdrop, vars,
+            title, message, size, closeOnBackdrop, vars, urgent,
             buildContent(root) {
                 inputType = DialogManager.fieldType(type, PROMPT_FIELD_TYPES);
                 const input = fbEl('input', {
@@ -635,7 +659,7 @@ const DialogManager = {
 
     // חלון בחירה מתוך רשימה נגללת (Selector)
     selector({ items = [], title = fbStrings.selectorTitle, message = '', cancelBtn = fbStrings.cancel,
-        searchable = false, searchPlaceholder = fbStrings.selectorSearch, size, closeOnBackdrop, vars }) {
+        searchable = false, searchPlaceholder = fbStrings.selectorSearch, size, closeOnBackdrop, vars, urgent }) {
 
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
@@ -645,6 +669,7 @@ const DialogManager = {
             size,
             closeOnBackdrop,
             vars,
+            urgent,
             buildContent(root) {
                 if (searchable) {
                     root.append(fbEl('input', {
@@ -748,7 +773,7 @@ const DialogManager = {
         });
     },
 
-    form({ title = fbStrings.inputTitle, message = '', fields = [], confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, size, closeOnBackdrop, vars }) {
+    form({ title = fbStrings.inputTitle, message = '', fields = [], confirmBtn = fbStrings.save, cancelBtn = fbStrings.cancel, size, closeOnBackdrop, vars, urgent }) {
         confirmBtn = DialogManager.convertBtn(confirmBtn);
         cancelBtn = DialogManager.convertBtn(cancelBtn);
 
@@ -758,6 +783,7 @@ const DialogManager = {
             size,
             closeOnBackdrop,
             vars,
+            urgent,
             buildContent(root) {
                 const formEl = fbEl('form', { id: 'fb-dynamic-form', novalidate: true });
                 fields.forEach((field, index) => {

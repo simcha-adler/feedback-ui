@@ -478,6 +478,22 @@ document.getElementById('test-close-all').addEventListener('click', () => {
     setTimeout(() => Feedback.closeAll(), 400);
 });
 
+document.getElementById('test-urgent').addEventListener('click', () => {
+    Feedback.prompt({
+        title: 'חונה',
+        message: 'הקלד משהו. בעוד רגע תקפוץ התראה דחופה — הטקסט אמור להישאר.',
+        defaultText: '',
+    }).then((v) => report('urgent-prompt', v));
+    Feedback.confirm('אני בתור הרגיל — אמור להופיע אחרי ה-prompt, לא לפניו').then((v) => report('urgent-confirm', v));
+    setTimeout(() => {
+        Feedback.alert({
+            title: 'דחוף',
+            message: 'הפתוח חנה בלי resolve. אחרי סגירה יחזור ה-prompt עם מה שהקלדת, ואז ה-confirm.',
+            urgent: true,
+        }).then((v) => report('urgent-alert', v));
+    }, 6000);
+});
+
 document.getElementById('test-backdrop-close').addEventListener('click', async () => {
     const result = await Feedback.confirm({
         title: 'סגירה ברקע',

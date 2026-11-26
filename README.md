@@ -91,7 +91,7 @@ Feedback.toast.success('Deleted');
 | `setLocale` / `getLocale` | Built-in text dictionary | `void` / a copy of the active dictionary |
 | `setToastPosition` / `getToastPosition` | Where toasts appear | `void` / the active position |
 
-`alert`, `confirm` and `prompt` accept either a string (the message) or an options object. A string cannot carry `closeOnBackdrop` or `vars`.
+`alert`, `confirm` and `prompt` accept either a string (the message) or an options object. A string cannot carry `closeOnBackdrop`, `vars`, or `urgent`.
 
 ---
 
@@ -132,6 +132,7 @@ Shared by every dialog (object form only):
 | `size` | `'sm'` (~20rem) · `'md'` (default, 400px) · `'lg'` (~40rem, for wide forms). |
 | `vars` | CSS variables for this dialog only. See [Per-dialog styling](#per-dialog-styling). |
 | `closeOnBackdrop` | `true` to let a backdrop click close the dialog. See [Behavior](#behavior). |
+| `urgent` | `true` to show this dialog now: the open one is hidden (its Promise stays pending, field values kept) and comes back after. See [Queue](#queue). |
 
 Per method:
 
@@ -254,6 +255,18 @@ Allowed: `top-start` · `top-center` · `top-end` · `bottom-start` · `bottom-c
 ### Queue
 
 Only one dialog is on screen at a time. Additional calls are queued and appear after the previous one closes. A held-down Enter key (key repeat) never confirms the next dialog in the queue.
+
+`urgent: true` (object form only) shows this call now. If another dialog is open and not already closing, it is taken off the screen **without resolving** — typed field values stay on the element — and put back at the front of the queue. After the urgent dialog closes, the parked one is shown again. Two urgent calls in a row: the later one is on top (LIFO). There is still only one `showModal` at a time. Toasts are not dismissed; they may flicker while the open dialog is swapped.
+
+```js
+await Feedback.prompt({ title: 'Name', defaultText: '' });
+// elsewhere, e.g. session expired:
+await Feedback.alert({
+  title: 'Disconnected',
+  message: 'Sign in again.',
+  urgent: true,
+});
+```
 
 ### Closing
 

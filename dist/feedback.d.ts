@@ -28,6 +28,7 @@
  *
  * התנהגות:
  * - דיאלוג אחד על המסך. קריאה נוספת נכנסת לתור.
+ *   `urgent: true` על אובייקט: חונה את הפתוח (בלי לפתור) ומציג את הקריאה הזו. מחרוזת לא מפעילה.
  * - לכל דיאלוג כפתור X. X ו־Esc = ערך הביטול של אותו סוג. אין `cancelBtn` ב־`alert`.
  * - לחיצה על הרקע (backdrop) לא סוגרת כברירת מחדל — רק אנימציית אזהרה.
  *   `closeOnBackdrop: true` על אובייקט הקריאה: סגירה בערך הביטול, רק אם pointerdown ו־pointerup שניהם על הרקע (לא גרירה מהקופסה החוצה). מחרוזת ל־alert/confirm/prompt לא מפעילה את זה.
@@ -140,6 +141,13 @@ export type feedbackAlert = {
      * `true` — סגירה כמו X/Esc (`undefined` ב-alert). רק אם press ו-release שניהם על הרקע.
      */
     closeOnBackdrop?: boolean
+    /**
+     * חסר / `false` — סוף התור.
+     * `true` — אם יש דיאלוג פתוח שלא בתהליך סגירה: מוסר מהמסך בלי לפתור את ה־Promise
+     * (שדות נשמרים על האלמנט), ומוחזר לראש התור אחרי הקריאה הזו. שני `urgent` ברצף: האחרון למעלה.
+     * אין דיאלוג פתוח — מוצג מיד. מחרוזת לא מפעילה. עדיין דיאלוג אחד ב־`showModal`.
+     */
+    urgent?: boolean
 }
 
 export type feedbackConfirm = {
@@ -154,6 +162,8 @@ export type feedbackConfirm = {
      * `true` — סגירה כמו X/Esc (`false`, לא `null`). רק press+release על הרקע.
      */
     closeOnBackdrop?: boolean
+    /** ראו `feedbackAlert.urgent` */
+    urgent?: boolean
 }
 
 export type feedbackMenu<T = any> = {
@@ -168,6 +178,8 @@ export type feedbackMenu<T = any> = {
      * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
      */
     closeOnBackdrop?: boolean
+    /** ראו `feedbackAlert.urgent` */
+    urgent?: boolean
 }
 
 /** שדה יחיד ב־`prompt`. חסר = `text`. */
@@ -205,6 +217,8 @@ export type feedbackPrompt = {
      * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
      */
     closeOnBackdrop?: boolean
+    /** ראו `feedbackAlert.urgent` */
+    urgent?: boolean
 }
 
 export type feedbackSelector<T = any> = {
@@ -222,6 +236,8 @@ export type feedbackSelector<T = any> = {
      * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
      */
     closeOnBackdrop?: boolean
+    /** ראו `feedbackAlert.urgent` */
+    urgent?: boolean
 }
 
 export type feedbackForm = {
@@ -237,6 +253,8 @@ export type feedbackForm = {
      * `true` — סגירה כמו X/Esc (`null`). רק press+release על הרקע.
      */
     closeOnBackdrop?: boolean
+    /** ראו `feedbackAlert.urgent` */
+    urgent?: boolean
 }
 
 export type feedbackField = {
@@ -276,7 +294,7 @@ export type feedbackToastHandle = {
 export type FeedbackObject = {
     /**
      * הודעה עם כפתור אחד. אין `cancelBtn`.
-     * מחרוזת = הודעה. אובייקט = כותרת / כפתור / size / vars.
+     * מחרוזת = הודעה. אובייקט = כותרת / כפתור / size / vars / urgent.
      * TS: `Promise<void>` — לא לקרוא את הערך.
      * JS: אישור, X, Esc ו־`closeAll` → `undefined`.
      */

@@ -28,6 +28,7 @@ export type feedbackDialog = {
     size?: feedbackSize
     closeOnBackdrop?: boolean
     vars?: feedbackDialogVars
+    urgent?: boolean
 }
 
 export type FbDialog = HTMLDialogElement & {
@@ -35,6 +36,7 @@ export type FbDialog = HTMLDialogElement & {
     _fbAbort?: () => void
     _fbForceClose?: () => void
     _fbShown?: () => void
+    _fbRendered?: boolean
 }
 
 export type FbToast = HTMLDivElement & {

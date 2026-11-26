@@ -31,7 +31,7 @@
 
 1. **`fbEl(tag, props, children)`** — DOM בלי `innerHTML`. `text` → `textContent`. booleans → attribute ריק. אין לערב טקסט צרכן ב־HTML string.
 2. **`ScrollLock`** — `overflow: hidden` על `html` + פיצוי רוחב scrollbar ב־`paddingLeft`/`paddingRight` לפי הצד הפיזי שבו הפס נמדד (לא לפי `dir`). lock רק אם אין `saved`; unlock מחזיר inline styles.
-3. **`DialogQueue`** — דיאלוג **אחד** ב־`showModal`. `push` → `processQueue`. אחרי סגירה: `dialogDeleted` → הבא בתור. אם התור ריק: `ScrollLock.unlock` + `ToastManager.promote`.
+3. **`DialogQueue`** — דיאלוג **אחד** ב־`showModal`. `push` → `processQueue`. `urgent`: `parkOpen` (releaseFrom, `close()` נייטיב, `remove`, `unshift` של הפתוח בלי resolve) ואז `unshift` של החדש. אחרי סגירה: `dialogDeleted` → הבא בתור. אם התור ריק: `ScrollLock.unlock` + `ToastManager.promote`.
 4. **`DialogManager.createDialog`** — תשתית לכל דיאלוג. המתודות (`alert`/`confirm`/…) רק `buildContent` + `onRender`.
 5. **`ToastManager`** — קונטיינר `#fb-toast-container` עם `popover="manual"`. מעל דיאלוג פתוח: מועבר **לתוך** ה־`<dialog>` (top-layer). בלי דיאלוג: `showPopover` אם יש טוסטים.
 
@@ -39,8 +39,8 @@
 
 ```
 Feedback.* → DialogManager.* → createDialog → Promise
-  DOM נבנה → DialogQueue.push
-  processQueue: append ל-body, showModal, ScrollLock.lock, toast.promote, dialog._fbShown → onRender(dialog, close)
+  DOM נבנה → DialogQueue.push(dialog, urgent)
+  processQueue: append ל-body, showModal, ScrollLock.lock, toast.promote, dialog._fbShown → onRender פעם אחת (`_fbRendered`)
   close(value): דגל closed (idempotent) → fb-closing → timeout לפי --fb-duration
     → toast.releaseFrom(dialog) → dialog.close() → remove → dialogDeleted → resolve(value)
   showModal נכשל: _fbShowFailed → reject Error('Feedback: failed to show dialog') + ניקוי תור
@@ -67,6 +67,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 | `getToastPosition` | המיקום הפעיל (`bottom-center` בהתחלה) | — |
 
 - `size`: `'sm'` / `'md'` / `'lg'`. חסר = `md` (400px). רק `sm` ו־`lg` מוסיפים מחלקה. לא `className` ציבורי.
+- `urgent`: חסר/`false` — סוף התור. `true` רק על אובייקט (לא מחרוזת). דיאלוג פתוח שלא ב־`fb-closing`: `parkOpen` — טוסטים יוצאים עם `releaseFrom` (לא נסגרים), `close()` נייטיב בלי אנימציית ספרייה, `remove`, `unshift` לראש התור, `isProcessing = false`. ה־Promise של החונה לא נפתר; ערכי שדות נשארים על האלמנט. אחרי הדחוף — `showModal` מחדש. `onRender` לא רץ שוב (`_fbRendered`). פתוח ב־`fb-closing`: אין חניה, רק `unshift` לתור. שני `urgent`: LIFO (האחרון למעלה). `closeAll` על חונה בתור: `dismissValue` מיד כמו דיאלוג שלא הוצג.
 - `closeOnBackdrop`: חסר/`false` — backdrop לא סוגר. `true` רק על אובייקט הקריאה (לא על מחרוזת). סגירה = אותו `dismissValue` כמו X/Esc. רק אם `pointerdown` ו־`pointerup` שניהם `e.target === dialog` וכפתור ראשי (`button === 0`). גרירה מהקופסה לרקע לא סוגרת. `pointercancel` מאפס. בלי הדגל: אותו תנאי מפעיל `fb-note` במקום סגירה. עם הדגל: מחלקה `fb-close-on-backdrop` — `--fb-backdrop` עדין ו־`--fb-backdrop-blur: 0px` (עדיין אפשר לדרוס ב־`vars`).
 - `vars`: אופציונלי על אובייקט דיאלוג (לא מחרוזת, לא טוסט). `normalizeDialogVars` לפני ה־Promise — throw סינכרוני, בלי כניסה לתור. מפתח `/^--[A-Za-z_][A-Za-z0-9_-]*$/`; ערך מחרוזת CSS כמו בגיליון (בלי המרה); `null` על מפתח = דילוג. לא אובייקט → `Error('Feedback: invalid dialog vars')`; מפתח לא תקין או ערך שאינו מחרוזת → `Error('Feedback: invalid CSS variable')`. `setProperty` על ה־`<dialog>`. inline דורס `size` לאותו טוקן. המופע הבא בלי `vars` חוזר לברירת המחדל. אין `className` ציבורי.
 - `confirm` תמיד `boolean`. צרכן שכותב `if (result)` ו־`if (!result)` חייב להיות נכון גם ל־X/Esc.
@@ -90,6 +91,7 @@ Feedback.* → DialogManager.* → createDialog → Promise
 ## אינווריאנטים
 
 - דיאלוג אחד פתוח. `close` חייב להיות idempotent (`closed`). בלי זה התור נשבר (שני `showModal`).
+- `urgent` לא פותח שני `showModal`. חניה: בלי resolve / בלי `_fbForceClose`. `onRender` פעם אחת לצומת (`_fbRendered`).
 - `cancel` על `<dialog>`: `preventDefault` + `close(dismissValue)`. בלי זה אין אנימציה / אין resolve.
 - Enter חוזר (`e.repeat`) על הדיאלוג: `preventDefault` + `stopPropagation` ב־capture. אחרת autofocus מאשר את הדיאלוג הבא בתור.
 - backdrop: `pointerdown`+`pointerup` שניהם על `dialog` (לא `click` בלבד). בלי `closeOnBackdrop`: `fb-note`. עם הדגל: `close(dismissValue)`. כניסה ב־`fb-opening` (לא animation ברירת מחדל על הקופסה). להסיר `fb-opening`/`fb-note` ב־`animationend` של `.fb-dialog-box` (לא ילדים) ובכניסה ל־`close`.
